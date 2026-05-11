@@ -458,8 +458,31 @@ API の稼働確認を返す。
 2. `GET /health` を実装する。　-> 済
 3. CSV 読み込みサービスを作る。　-> 済
 4. DataFrame から API フィールドへ変換する関数を作る。　-> 済
-5. `GET /api/planets` を実装する。
+5. `GET /api/planets` を実装する。　-> 済
 6. `GET /api/planets/{planet_name}` を実装する。
 7. タイムライン、発見手法、散布図、天球マップ API を追加する。
 8. pytest で主要 API とサービス層を検証する。
 9. フロントエンドから利用する API URL と CORS を確認する。
+
+## 14. 次のチャットへの引継ぎ事項
+
+```
+ExoAtlas のバックエンド実装を続けます。
+リポジトリは /home/nakasho/exoatlas です。
+作業方針は .codex を参照してください。
+
+docs/backend-design.md の実装順序に沿って進めています。
+完了済み:
+1. backend/exoatlas_api の最小 FastAPI 構成
+2. GET /health
+3. CSV 読み込みサービス
+4. DataFrame から API フィールドへ変換する関数
+5. GET /api/planets
+
+次は docs/backend-design.md の
+6. GET /api/planets/{planet_name}
+を実装してください。
+
+作業時は uv を使ってください。
+コード変更後は uv run ruff check . / uv run pytest / uv build を確認し、コミットメッセージ案も返してください。
+```
