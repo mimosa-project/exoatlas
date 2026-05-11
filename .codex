@@ -1,0 +1,128 @@
+# ExoAtlas Codex Notes
+
+## Project
+
+ExoAtlas is an interactive visualization app for NASA exoplanet datasets.
+
+Current direction:
+
+- Backend: FastAPI + Pandas + Pydantic
+- Frontend: React + TypeScript + Vite, planned for later
+- Prototype: Streamlit app remains in `src/exoatlas/app.py`
+- Main dataset: `dataset/NASA_Exoplanet_Composite.csv`
+- Future dataset: `dataset/NASA_Exoplanet_Planetary.csv`
+
+Primary documents:
+
+- `docs/requirements.md`
+- `docs/backend-design.md`
+- `docs/frontend-design.md`
+
+## Project Management
+
+Use `uv` for Python project management and command execution.
+
+Preferred commands:
+
+```bash
+uv sync
+uv add <package>
+uv add --dev <package>
+uv run ruff check .
+uv run pytest
+uv build
+```
+
+When running Python directly, prefer `uv run python ...`.
+
+Do not use `pip install` for this project unless the user explicitly asks for it.
+
+## Current Backend State
+
+Implemented:
+
+- Minimal FastAPI backend package in `backend/exoatlas_api`
+- `GET /health`
+- Composite CSV loading service
+- Dataset path override via `EXOATLAS_COMPOSITE_CSV`
+- Tests for app creation, health endpoint, and dataset loading
+
+Important backend files:
+
+- `backend/exoatlas_api/main.py`
+- `backend/exoatlas_api/config.py`
+- `backend/exoatlas_api/routers/health.py`
+- `backend/exoatlas_api/schemas/health.py`
+- `backend/exoatlas_api/services/dataset.py`
+
+## Backend Implementation Order
+
+Follow `docs/backend-design.md` section 13.
+
+Completed:
+
+1. `backend/exoatlas_api` minimal FastAPI structure
+2. `GET /health`
+3. CSV loading service
+
+Next likely step:
+
+4. Create conversion helpers from DataFrame columns to API fields.
+
+Then continue with:
+
+- `GET /api/planets`
+- `GET /api/planets/{planet_name}`
+- Timeline, discovery methods, scatter, and sky map APIs
+
+## Backend Conventions
+
+- Keep API response contracts aligned with `docs/backend-design.md`.
+- Keep missing CSV data as Pandas missing values inside services.
+- Convert missing values to JSON `null` at the API response boundary.
+- Do not return raw full CSV rows from API endpoints.
+- Use explicit field mapping from NASA CSV column names to API field names.
+- Keep `backend` included in wheel packaging via `pyproject.toml`.
+
+## Testing
+
+Run these before reporting backend code changes as complete:
+
+```bash
+uv run ruff check .
+uv run pytest
+uv build
+```
+
+Use focused tests during development when helpful, for example:
+
+```bash
+uv run pytest tests/test_dataset_service.py
+uv run pytest tests/test_health.py
+```
+
+## Git And Review
+
+- Do not revert user changes unless explicitly requested.
+- Keep commits small and aligned with implementation steps.
+- After creating or changing code, include a commit message suggestion in the final response.
+- If the user asks for a review, lead with findings and file/line references.
+
+Recent commit message style:
+
+```text
+feat: add minimal FastAPI backend structure
+fix: include backend package and support dataset env override
+feat: add health check endpoint
+feat: add composite dataset loading service
+```
+
+## Frontend
+
+Frontend work has not started yet. Backend should lead until the main API contracts are stable.
+
+When frontend starts:
+
+- Use React + TypeScript + Vite.
+- Use API contracts from `docs/backend-design.md`.
+- Keep frontend design aligned with `docs/frontend-design.md`.
