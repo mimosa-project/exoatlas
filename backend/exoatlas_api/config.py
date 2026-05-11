@@ -1,7 +1,10 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 
 from pydantic import BaseModel, Field
+
+COMPOSITE_CSV_ENV = "EXOATLAS_COMPOSITE_CSV"
 
 
 class Settings(BaseModel):
@@ -20,4 +23,7 @@ class Settings(BaseModel):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    composite_csv = os.getenv(COMPOSITE_CSV_ENV)
+    composite_csv_path = Path(composite_csv) if composite_csv else None
+
+    return Settings(composite_csv_path=composite_csv_path)

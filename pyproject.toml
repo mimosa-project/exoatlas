@@ -25,6 +25,9 @@ build-backend = "hatchling.build"
 [tool.uv]
 package = true
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/exoatlas", "backend"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"
