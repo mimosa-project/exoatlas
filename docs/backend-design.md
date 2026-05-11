@@ -457,7 +457,7 @@ API の稼働確認を返す。
 1. `backend/exoatlas_api` の最小 FastAPI 構成を作る。　-> 済
 2. `GET /health` を実装する。　-> 済
 3. CSV 読み込みサービスを作る。　-> 済
-4. DataFrame から API フィールドへ変換する関数を作る。
+4. DataFrame から API フィールドへ変換する関数を作る。　-> 済
 5. `GET /api/planets` を実装する。
 6. `GET /api/planets/{planet_name}` を実装する。
 7. タイムライン、発見手法、散布図、天球マップ API を追加する。
