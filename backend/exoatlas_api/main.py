@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.exoatlas_api import __version__
 from backend.exoatlas_api.config import get_settings
+from backend.exoatlas_api.routers import health
 
 
 def create_app() -> FastAPI:
@@ -19,6 +20,8 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.include_router(health.router)
 
     return app
 
