@@ -37,45 +37,9 @@ When running Python directly, prefer `uv run python ...`.
 
 Do not use `pip install` for this project unless the user explicitly asks for it.
 
-## Current Backend State
+## Backend
 
-Implemented:
-
-- Minimal FastAPI backend package in `backend/exoatlas_api`
-- `GET /health`
-- Composite CSV loading service
-- Dataset path override via `EXOATLAS_COMPOSITE_CSV`
-- Tests for app creation, health endpoint, and dataset loading
-
-Important backend files:
-
-- `backend/exoatlas_api/main.py`
-- `backend/exoatlas_api/config.py`
-- `backend/exoatlas_api/routers/health.py`
-- `backend/exoatlas_api/schemas/health.py`
-- `backend/exoatlas_api/services/dataset.py`
-
-## Backend Implementation Order
-
-Follow `docs/backend-design.md` section 13.
-
-Completed:
-
-1. `backend/exoatlas_api` minimal FastAPI structure
-2. `GET /health`
-3. CSV loading service
-
-Next likely step:
-
-4. Create conversion helpers from DataFrame columns to API fields.
-
-Then continue with:
-
-- `GET /api/planets`
-- `GET /api/planets/{planet_name}`
-- Timeline, discovery methods, scatter, and sky map APIs
-
-## Backend Conventions
+Follow `docs/backend-design.md` for backend architecture and implementation order.
 
 - Keep API response contracts aligned with `docs/backend-design.md`.
 - Keep missing CSV data as Pandas missing values inside services.
@@ -108,20 +72,7 @@ uv run pytest tests/test_health.py
 - After creating or changing code, include a commit message suggestion in the final response.
 - If the user asks for a review, lead with findings and file/line references.
 
-Recent commit message style:
-
-```text
-feat: add minimal FastAPI backend structure
-fix: include backend package and support dataset env override
-feat: add health check endpoint
-feat: add composite dataset loading service
-```
-
 ## Frontend
-
-Frontend work has not started yet. Backend should lead until the main API contracts are stable.
-
-When frontend starts:
 
 - Use React + TypeScript + Vite.
 - Use API contracts from `docs/backend-design.md`.
