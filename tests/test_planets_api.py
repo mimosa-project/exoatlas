@@ -95,3 +95,129 @@ def test_get_planets_validates_limit() -> None:
     response = client.get("/api/planets", params={"limit": 501})
 
     assert response.status_code == 422
+
+
+def test_get_planet_by_name_returns_details(tmp_path: Path, monkeypatch) -> None:
+    dataset_path = tmp_path / "planets.csv"
+    write_dataset(
+        dataset_path,
+        [
+            {
+                "rowid": 1,
+                "pl_name": "Kepler-22 b",
+                "hostname": "Kepler-22",
+                "discoverymethod": "Transit",
+                "disc_year": 2011,
+                "pl_orbper": 289.8623,
+                "pl_orbsmax": 0.849,
+                "pl_rade": 2.1,
+                "pl_bmasse": None,
+                "pl_dens": None,
+                "pl_eqt": 262,
+                "st_teff": 5518,
+                "st_rad": 0.979,
+                "st_mass": 0.97,
+                "st_spectype": "G5",
+                "ra": 285.679421,
+                "dec": 47.897,
+                "sy_dist": 194.697,
+            },
+        ],
+    )
+    clear_composite_dataset_cache()
+    get_settings.cache_clear()
+    monkeypatch.setenv("EXOATLAS_COMPOSITE_CSV", dataset_path.as_posix())
+    client = TestClient(create_app())
+
+    response = client.get("/api/planets/Kepler-22%20b")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 1,
+        "planet_name": "Kepler-22 b",
+        "host_name": "Kepler-22",
+        "discovery_method": "Transit",
+        "discovery_year": 2011,
+        "orbit": {
+            "orbital_period_days": 289.8623,
+            "semi_major_axis_au": 0.849,
+        },
+        "planet": {
+            "radius_earth": 2.1,
+            "mass_earth": None,
+            "density": None,
+            "equilibrium_temperature": 262.0,
+        },
+        "star": {
+            "stellar_temperature": 5518.0,
+            "stellar_radius": 0.979,
+            "stellar_mass": 0.97,
+            "stellar_spectral_type": "G5",
+        },
+        "position": {
+            "right_ascension": 285.679421,
+            "declination": 47.897,
+            "distance_parsec": 194.697,
+        },
+    }
+    clear_composite_dataset_cache()
+    get_settings.cache_clear()
+
+
+def test_get_planet_by_name_returns_404_if_not_found(tmp_path: Path, monkeypatch) -> None:
+    dataset_path = tmp_path / "planets.csv"
+    write_dataset(dataset_path, [])
+    clear_composite_dataset_cache()
+    get_settings.cache_clear()
+    monkeypatch.setenv("EXOATLAS_COMPOSITE_CSV", dataset_path.as_posix())
+    client = TestClient(create_app())
+
+    response = client.get("/api/planets/Unknown%20Planet")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Planet 'Unknown Planet' not found"}
+    clear_composite_dataset_cache()
+    get_settings.cache_clear()
+
+
+def test_get_planet_by_name_returns_details_case_insensitive(tmp_path: Path, monkeypatch) -> None:
+    dataset_path = tmp_path / "planets.csv"
+    write_dataset(
+        dataset_path,
+        [
+            {
+                "rowid": 1,
+                "pl_name": "Kepler-22 b",
+                "hostname": "Kepler-22",
+                "discoverymethod": "Transit",
+                "disc_year": 2011,
+                "pl_orbper": 289.8623,
+                "pl_orbsmax": 0.849,
+                "pl_rade": 2.1,
+                "pl_bmasse": None,
+                "pl_dens": None,
+                "pl_eqt": 262,
+                "st_teff": 5518,
+                "st_rad": 0.979,
+                "st_mass": 0.97,
+                "st_spectype": "G5",
+                "ra": 285.679421,
+                "dec": 47.897,
+                "sy_dist": 194.697,
+            },
+        ],
+    )
+    clear_composite_dataset_cache()
+    get_settings.cache_clear()
+    monkeypatch.setenv("EXOATLAS_COMPOSITE_CSV", dataset_path.as_posix())
+    client = TestClient(create_app())
+
+    # Request with lowercased planet name
+    response = client.get("/api/planets/kepler-22%20b")
+
+    assert response.status_code == 200
+    assert response.json()["planet_name"] == "Kepler-22 b"
+    clear_composite_dataset_cache()
+    get_settings.cache_clear()
+
+

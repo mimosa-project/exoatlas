@@ -1,7 +1,7 @@
 import pandas as pd
 
 from backend.exoatlas_api.services.dataset import normalize_composite_dataset
-from backend.exoatlas_api.services.planets import list_planets
+from backend.exoatlas_api.services.planets import get_planet, list_planets
 
 
 def make_planets_dataframe() -> pd.DataFrame:
@@ -112,3 +112,53 @@ def test_list_planets_pages_and_sorts_results() -> None:
     assert total == 3
     assert len(items) == 1
     assert items[0]["planet_name"] == "Kepler-22 b"
+
+
+def test_get_planet_returns_planet_details() -> None:
+    df = make_planets_dataframe()
+    planet = get_planet(df, "Proxima Cen b")
+
+    assert planet is not None
+    assert planet["planet_name"] == "Proxima Cen b"
+    assert planet["host_name"] == "Proxima Cen"
+    assert planet["discovery_method"] == "Radial Velocity"
+    assert planet["discovery_year"] == 2016
+
+    assert planet["orbit"] == {
+        "orbital_period_days": 11.1868,
+        "semi_major_axis_au": 0.0485,
+    }
+    assert planet["planet"] == {
+        "radius_earth": 1.1,
+        "mass_earth": 1.27,
+        "density": None,
+        "equilibrium_temperature": 234.0,
+    }
+    assert planet["star"] == {
+        "stellar_temperature": 2900.0,
+        "stellar_radius": 0.14,
+        "stellar_mass": 0.12,
+        "stellar_spectral_type": "M5.5 Ve",
+    }
+    assert planet["position"] == {
+        "right_ascension": 217.4292,
+        "declination": -62.6795,
+        "distance_parsec": 1.30119,
+    }
+
+
+def test_get_planet_returns_none_if_not_found() -> None:
+    df = make_planets_dataframe()
+    planet = get_planet(df, "Non-existent Planet")
+
+    assert planet is None
+
+
+def test_get_planet_returns_planet_details_case_insensitive() -> None:
+    df = make_planets_dataframe()
+    planet = get_planet(df, "proxima cen b")
+
+    assert planet is not None
+    assert planet["planet_name"] == "Proxima Cen b"
+
+

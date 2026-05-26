@@ -3,9 +3,9 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query, status
 
 from backend.exoatlas_api.schemas.common import PaginatedResponse
-from backend.exoatlas_api.schemas.planets import PlanetListItem
+from backend.exoatlas_api.schemas.planets import PlanetDetail, PlanetListItem
 from backend.exoatlas_api.services.dataset import DatasetError, get_composite_dataset
-from backend.exoatlas_api.services.planets import PlanetQueryError, list_planets
+from backend.exoatlas_api.services.planets import PlanetQueryError, get_planet, list_planets
 
 router = APIRouter(prefix="/api", tags=["planets"])
 
@@ -64,3 +64,23 @@ def read_planets(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get("/planets/{planet_name}", response_model=PlanetDetail)
+def read_planet(planet_name: str) -> dict[str, object]:
+    try:
+        planet = get_planet(get_composite_dataset(), planet_name)
+    except DatasetError as error:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(error),
+        ) from error
+
+    if planet is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Planet '{planet_name}' not found",
+        )
+
+    return planet
+
