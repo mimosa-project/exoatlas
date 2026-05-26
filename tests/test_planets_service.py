@@ -153,3 +153,12 @@ def test_get_planet_returns_none_if_not_found() -> None:
 
     assert planet is None
 
+
+def test_get_planet_returns_planet_details_case_insensitive() -> None:
+    df = make_planets_dataframe()
+    planet = get_planet(df, "proxima cen b")
+
+    assert planet is not None
+    assert planet["planet_name"] == "Proxima Cen b"
+
+

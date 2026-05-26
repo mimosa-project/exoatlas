@@ -67,7 +67,7 @@ def read_planets(
 
 
 @router.get("/planets/{planet_name}", response_model=PlanetDetail)
-def read_planet(planet_name: str) -> PlanetDetail:
+def read_planet(planet_name: str) -> dict[str, object]:
     try:
         planet = get_planet(get_composite_dataset(), planet_name)
     except DatasetError as error:
@@ -82,5 +82,5 @@ def read_planet(planet_name: str) -> PlanetDetail:
             detail=f"Planet '{planet_name}' not found",
         )
 
-    return PlanetDetail(**planet)
+    return planet
 

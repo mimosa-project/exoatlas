@@ -154,7 +154,7 @@ def sort_planets(dataframe: pd.DataFrame, *, sort: str, order: str) -> pd.DataFr
 
 
 def get_planet(dataframe: pd.DataFrame, planet_name: str) -> dict[str, object] | None:
-    matches = dataframe[dataframe["pl_name"] == planet_name]
+    matches = dataframe[dataframe["pl_name"].str.lower() == planet_name.lower()]
     if matches.empty:
         return None
 

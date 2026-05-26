@@ -179,3 +179,45 @@ def test_get_planet_by_name_returns_404_if_not_found(tmp_path: Path, monkeypatch
     clear_composite_dataset_cache()
     get_settings.cache_clear()
 
+
+def test_get_planet_by_name_returns_details_case_insensitive(tmp_path: Path, monkeypatch) -> None:
+    dataset_path = tmp_path / "planets.csv"
+    write_dataset(
+        dataset_path,
+        [
+            {
+                "rowid": 1,
+                "pl_name": "Kepler-22 b",
+                "hostname": "Kepler-22",
+                "discoverymethod": "Transit",
+                "disc_year": 2011,
+                "pl_orbper": 289.8623,
+                "pl_orbsmax": 0.849,
+                "pl_rade": 2.1,
+                "pl_bmasse": None,
+                "pl_dens": None,
+                "pl_eqt": 262,
+                "st_teff": 5518,
+                "st_rad": 0.979,
+                "st_mass": 0.97,
+                "st_spectype": "G5",
+                "ra": 285.679421,
+                "dec": 47.897,
+                "sy_dist": 194.697,
+            },
+        ],
+    )
+    clear_composite_dataset_cache()
+    get_settings.cache_clear()
+    monkeypatch.setenv("EXOATLAS_COMPOSITE_CSV", dataset_path.as_posix())
+    client = TestClient(create_app())
+
+    # Request with lowercased planet name
+    response = client.get("/api/planets/kepler-22%20b")
+
+    assert response.status_code == 200
+    assert response.json()["planet_name"] == "Kepler-22 b"
+    clear_composite_dataset_cache()
+    get_settings.cache_clear()
+
+
