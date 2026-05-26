@@ -4,6 +4,7 @@ from backend.exoatlas_api.utils.dataframe import (
     PLANET_FIELD_MAP,
     PLANET_LIST_FIELDS,
     dataframe_to_api_records,
+    series_to_api_record,
 )
 
 SORTABLE_FIELDS = frozenset(PLANET_LIST_FIELDS)
@@ -150,3 +151,42 @@ def sort_planets(dataframe: pd.DataFrame, *, sort: str, order: str) -> pd.DataFr
         na_position="last",
         kind="mergesort",
     )
+
+
+def get_planet(dataframe: pd.DataFrame, planet_name: str) -> dict[str, object] | None:
+    matches = dataframe[dataframe["pl_name"] == planet_name]
+    if matches.empty:
+        return None
+
+    row = matches.iloc[0]
+    record = series_to_api_record(row)
+
+    return {
+        "id": record["id"],
+        "planet_name": record["planet_name"],
+        "host_name": record["host_name"],
+        "discovery_method": record["discovery_method"],
+        "discovery_year": record["discovery_year"],
+        "orbit": {
+            "orbital_period_days": record["orbital_period_days"],
+            "semi_major_axis_au": record["semi_major_axis_au"],
+        },
+        "planet": {
+            "radius_earth": record["radius_earth"],
+            "mass_earth": record["mass_earth"],
+            "density": record["density"],
+            "equilibrium_temperature": record["equilibrium_temperature"],
+        },
+        "star": {
+            "stellar_temperature": record["stellar_temperature"],
+            "stellar_radius": record["stellar_radius"],
+            "stellar_mass": record["stellar_mass"],
+            "stellar_spectral_type": record["stellar_spectral_type"],
+        },
+        "position": {
+            "right_ascension": record["right_ascension"],
+            "declination": record["declination"],
+            "distance_parsec": record["distance_parsec"],
+        },
+    }
+
