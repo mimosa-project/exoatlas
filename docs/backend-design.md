@@ -190,6 +190,8 @@ API の稼働確認を返す。
 | `mass_max` | number | なし | 地球質量上限 |
 | `orbital_period_min` | number | なし | 公転周期下限 |
 | `orbital_period_max` | number | なし | 公転周期上限 |
+| `distance_min` | number | なし | 距離下限 |
+| `distance_max` | number | なし | 距離上限 |
 | `habitable_candidate` | boolean | `false` | 簡易ハビタブル候補条件 |
 | `limit` | integer | `50` | 取得件数。最大 `500` |
 | `offset` | integer | `0` | 取得開始位置 |
@@ -266,6 +268,7 @@ API の稼働確認を返す。
 
 | 名前 | 型 | 既定値 | 説明 |
 | --- | --- | --- | --- |
+| `discovery_method` | string | なし | 発見手法で絞り込む |
 | `disc_year_min` | integer | なし | 発見年下限 |
 | `disc_year_max` | integer | なし | 発見年上限 |
 | `group_by_method` | boolean | `true` | 発見手法別に分けるか |
@@ -313,6 +316,8 @@ API の稼働確認を返す。
 | `discovery_method` | string | なし | 発見手法 |
 | `disc_year_min` | integer | なし | 発見年下限 |
 | `disc_year_max` | integer | なし | 発見年上限 |
+| `distance_min` | number | なし | 距離下限 |
+| `distance_max` | number | なし | 距離上限 |
 
 レスポンス例:
 
@@ -345,6 +350,7 @@ API の稼働確認を返す。
 | `discovery_method` | string | なし | 発見手法 |
 | `disc_year_min` | integer | なし | 発見年下限 |
 | `disc_year_max` | integer | なし | 発見年上限 |
+| `distance_min` | number | なし | 距離下限 |
 | `distance_max` | number | なし | 距離上限 |
 
 レスポンス例:
@@ -383,6 +389,8 @@ API の稼働確認を返す。
 - `mass_max`
 - `orbital_period_min`
 - `orbital_period_max`
+- `distance_min`
+- `distance_max`
 
 ### 8.2 簡易ハビタブル候補条件
 
@@ -459,8 +467,13 @@ API の稼働確認を返す。
 3. CSV 読み込みサービスを作る。　-> 済
 4. DataFrame から API フィールドへ変換する関数を作る。　-> 済
 5. `GET /api/planets` を実装する。　-> 済
-6. `GET /api/planets/{planet_name}` を実装する。
-7. タイムライン、発見手法、散布図、天球マップ API を追加する。
-8. pytest で主要 API とサービス層を検証する。
+6. `GET /api/planets/{planet_name}` を実装する。　-> 済
+7. タイムライン、発見手法、散布図、天球マップ API を追加する。　-> 済
+   - `GET /api/discoveries/timeline` を追加する。　-> 済
+   - `GET /api/discovery-methods` を追加する。　-> 済
+   - `GET /api/scatter/orbit-radius` を追加する。　-> 済
+   - `GET /api/sky-map` を追加する。　-> 済
+   - 一覧／チャート系 API に `distance` フィルターを追加する（`distance_min`, `distance_max`）。　-> 済
+8. pytest で主要 API とサービス層を検証する。　-> 済
 9. フロントエンドから利用する API URL と CORS を確認する。
 

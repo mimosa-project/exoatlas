@@ -49,3 +49,85 @@ class PlanetDetail(BaseModel):
     star: PlanetStar
     position: PlanetPosition
 
+
+class DiscoveryTimelineItem(BaseModel):
+    year: int | None
+    discovery_method: str | None = None
+    count: int
+
+
+class DiscoveryTimelineResponse(BaseModel):
+    items: list[DiscoveryTimelineItem]
+
+
+class DiscoveryMethodItem(BaseModel):
+    discovery_method: str
+    count: int
+
+
+class DiscoveryMethodsResponse(BaseModel):
+    items: list[DiscoveryMethodItem]
+
+
+class ScatterOrbitRadiusItem(BaseModel):
+    id: int | None
+    planet_name: str | None
+    host_name: str | None
+    discovery_method: str | None
+    discovery_year: int | None
+    orbital_period_days: float | None
+    radius_earth: float | None
+    mass_earth: float | None
+
+
+class ScatterOrbitRadiusResponse(BaseModel):
+    items: list[ScatterOrbitRadiusItem]
+
+
+class SkyMapItem(BaseModel):
+    id: int | None
+    planet_name: str | None
+    host_name: str | None
+    discovery_method: str | None
+    discovery_year: int | None
+    right_ascension: float | None
+    declination: float | None
+    distance_parsec: float | None
+
+
+class SkyMapResponse(BaseModel):
+    items: list[SkyMapItem]
+
+
+class DiscoveryTimelineItem(BaseModel):
+    year: int | None
+    discovery_method: str | None = None
+    count: int
+
+
+class DiscoveryMethodItem(BaseModel):
+    discovery_method: str
+    count: int
+
+
+class ScatterOrbitRadiusItem(BaseModel):
+    id: int | None
+    planet_name: str | None
+    host_name: str | None
+    discovery_method: str | None
+    discovery_year: int | None
+    orbital_period_days: float | None
+    radius_earth: float | None
+    mass_earth: float | None
+
+
+class SkyMapItem(BaseModel):
+    id: int | None
+    planet_name: str | None
+    host_name: str | None
+    discovery_method: str | None
+    discovery_year: int | None
+    right_ascension: float | None
+    declination: float | None
+    distance_parsec: float | None
+

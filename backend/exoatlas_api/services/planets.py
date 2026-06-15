@@ -28,6 +28,8 @@ def list_planets(
     mass_max: float | None = None,
     orbital_period_min: float | None = None,
     orbital_period_max: float | None = None,
+    distance_min: float | None = None,
+    distance_max: float | None = None,
     habitable_candidate: bool = False,
     limit: int = 50,
     offset: int = 0,
@@ -46,6 +48,8 @@ def list_planets(
         mass_max=mass_max,
         orbital_period_min=orbital_period_min,
         orbital_period_max=orbital_period_max,
+        distance_min=distance_min,
+        distance_max=distance_max,
         habitable_candidate=habitable_candidate,
     )
     total = len(filtered)
@@ -53,6 +57,148 @@ def list_planets(
     page = sorted_dataframe.iloc[offset : offset + limit]
 
     return dataframe_to_api_records(page, fields=PLANET_LIST_FIELDS), total
+
+
+def discovery_timeline(
+    dataframe: pd.DataFrame,
+    *,
+    discovery_method: str | None = None,
+    disc_year_min: int | None = None,
+    disc_year_max: int | None = None,
+    group_by_method: bool = True,
+) -> list[dict[str, object]]:
+    filtered = filter_planets(
+        dataframe,
+        discovery_method=discovery_method,
+        disc_year_min=disc_year_min,
+        disc_year_max=disc_year_max,
+    )
+    filtered = filtered[filtered["disc_year"].notna()]
+
+    group_columns = ["disc_year"]
+    if group_by_method:
+        group_columns.append("discoverymethod")
+
+    counts = (
+        filtered.groupby(group_columns, dropna=False)
+        .size()
+        .reset_index(name="count")
+        .sort_values(group_columns)
+    )
+
+    results: list[dict[str, object]] = []
+    for _, row in counts.iterrows():
+        results.append(
+            {
+                "year": int(row["disc_year"]) if not pd.isna(row["disc_year"]) else None,
+                "discovery_method": row["discoverymethod"] if group_by_method else None,
+                "count": int(row["count"]),
+            }
+        )
+
+    return results
+
+
+def discovery_methods(
+    dataframe: pd.DataFrame,
+    *,
+    disc_year_min: int | None = None,
+    disc_year_max: int | None = None,
+) -> list[dict[str, object]]:
+    filtered = filter_planets(
+        dataframe,
+        disc_year_min=disc_year_min,
+        disc_year_max=disc_year_max,
+    )
+    counts = (
+        filtered[filtered["discoverymethod"].notna()]
+        .groupby("discoverymethod", dropna=False)
+        .size()
+        .reset_index(name="count")
+        .sort_values(["count", "discoverymethod"], ascending=[False, True])
+    )
+
+    return [
+        {
+            "discovery_method": row["discoverymethod"],
+            "count": int(row["count"]),
+        }
+        for _, row in counts.iterrows()
+    ]
+
+
+def scatter_orbit_radius(
+    dataframe: pd.DataFrame,
+    *,
+    y_axis: str = "radius",
+    discovery_method: str | None = None,
+    disc_year_min: int | None = None,
+    disc_year_max: int | None = None,
+    distance_min: float | None = None,
+    distance_max: float | None = None,
+) -> list[dict[str, object]]:
+    if y_axis not in ("radius", "mass"):
+        raise PlanetQueryError(f"Unsupported y_axis: {y_axis}")
+
+    y_field = "pl_rade" if y_axis == "radius" else "pl_bmasse"
+
+    filtered = filter_planets(
+        dataframe,
+        discovery_method=discovery_method,
+        disc_year_min=disc_year_min,
+        disc_year_max=disc_year_max,
+        distance_min=distance_min,
+        distance_max=distance_max,
+    )
+    filtered = filtered[filtered["pl_orbper"].notna() & filtered[y_field].notna()]
+
+    return dataframe_to_api_records(
+        filtered,
+        fields=(
+            "id",
+            "planet_name",
+            "host_name",
+            "discovery_method",
+            "discovery_year",
+            "orbital_period_days",
+            "radius_earth",
+            "mass_earth",
+        ),
+    )
+
+
+def sky_map(
+    dataframe: pd.DataFrame,
+    *,
+    discovery_method: str | None = None,
+    disc_year_min: int | None = None,
+    disc_year_max: int | None = None,
+    distance_min: float | None = None,
+    distance_max: float | None = None,
+) -> list[dict[str, object]]:
+    filtered = filter_planets(
+        dataframe,
+        discovery_method=discovery_method,
+        disc_year_min=disc_year_min,
+        disc_year_max=disc_year_max,
+        distance_min=distance_min,
+        distance_max=distance_max,
+    )
+    filtered = filtered[filtered["ra"].notna() & filtered["dec"].notna()]
+
+    return dataframe_to_api_records(
+        filtered,
+        fields=(
+            "id",
+            "planet_name",
+            "host_name",
+            "discovery_method",
+            "discovery_year",
+            "right_ascension",
+            "declination",
+            "distance_parsec",
+        ),
+    )
 
 
 def filter_planets(
@@ -68,6 +214,8 @@ def filter_planets(
     mass_max: float | None = None,
     orbital_period_min: float | None = None,
     orbital_period_max: float | None = None,
+    distance_min: float | None = None,
+    distance_max: float | None = None,
     habitable_candidate: bool = False,
 ) -> pd.DataFrame:
     filtered = dataframe
@@ -106,6 +254,7 @@ def filter_planets(
         minimum=orbital_period_min,
         maximum=orbital_period_max,
     )
+    filtered = apply_range_filter(filtered, "sy_dist", minimum=distance_min, maximum=distance_max)
 
     if habitable_candidate:
         filtered = filtered[
