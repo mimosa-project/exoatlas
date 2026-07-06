@@ -46,3 +46,20 @@ body {
   margin: 0;
   color: var(--color-muted);
 }
+
+.app__status {
+  margin: 1.5rem 0 0;
+  font-size: 0.95rem;
+}
+
+.app__status--loading {
+  color: var(--color-muted);
+}
+
+.app__status--success {
+  color: #7dd3a8;
+}
+
+.app__status--error {
+  color: #f08a8a;
+}

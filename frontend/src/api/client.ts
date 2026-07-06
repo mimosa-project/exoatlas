@@ -41,6 +41,25 @@ export function buildApiUrl(path: string): string {
   return `${baseUrl}${normalizedPath}`
 }
 
+export function buildQueryString(
+  params: Record<string, string | number | boolean | undefined | null>,
+): string {
+  const search = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null) {
+      continue
+    }
+    if (typeof value === 'string' && value.length === 0) {
+      continue
+    }
+    search.set(key, String(value))
+  }
+
+  const query = search.toString()
+  return query.length > 0 ? `?${query}` : ''
+}
+
 function readErrorMessage(body: unknown, status: number): string {
   if (body && typeof body === 'object' && 'detail' in body) {
     const { detail } = body as { detail: unknown }
