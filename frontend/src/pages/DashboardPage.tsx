@@ -3,11 +3,14 @@ import { getDiscoveryMethods } from '../api/discoveries'
 import { ApiError } from '../api/client'
 import { getHealth } from '../api/health'
 import { getPlanets } from '../api/planets'
+import { FilterPanel } from '../components/filters/FilterPanel'
 import { AppShell } from '../components/layout/AppShell'
 import {
   Header,
   type ApiConnectionState,
 } from '../components/layout/Header'
+import { usePlanetFilters } from '../hooks/usePlanetFilters'
+import type { PlanetListQueryParams } from '../types/api'
 
 type DashboardKpis = {
   totalPlanets: number
@@ -21,6 +24,16 @@ type KpiLoadState =
   | { status: 'loading' }
   | { status: 'ready'; data: DashboardKpis }
   | { status: 'error'; message: string }
+
+function toErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    return error.message
+  }
+  if (error instanceof Error) {
+    return error.message
+  }
+  return 'Request failed'
+}
 
 function formatDiscoveryYearRange(
   oldestYear: number | null | undefined,
@@ -48,34 +61,49 @@ function DashboardPlaceholder({
   )
 }
 
-function KpiCard({ label, value }: { label: string; value: string }) {
+function KpiCard({
+  label,
+  value,
+  error,
+}: {
+  label: string
+  value: string
+  error?: string
+}) {
   return (
     <article className="kpi-card">
       <p className="kpi-card__label">{label}</p>
       <p className="kpi-card__value">{value}</p>
+      {error ? (
+        <p className="kpi-card__error" role="alert">
+          {error}
+        </p>
+      ) : null}
     </article>
   )
 }
 
 export function DashboardPage() {
+  const {
+    filters,
+    setFilter,
+    resetFilters,
+    listQueryParams,
+    isDebouncingSearch,
+  } = usePlanetFilters()
+
   const [connection, setConnection] = useState<ApiConnectionState>({
     status: 'loading',
   })
   const [datasetTotal, setDatasetTotal] = useState<number | null>(null)
+  const [discoveryMethods, setDiscoveryMethods] = useState<string[]>([])
   const [kpis, setKpis] = useState<KpiLoadState>({ status: 'idle' })
+  const [displayedPlanets, setDisplayedPlanets] = useState<number | null>(null)
+  const [displayedLoading, setDisplayedLoading] = useState(false)
+  const [displayedError, setDisplayedError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-
-    function toErrorMessage(error: unknown): string {
-      if (error instanceof ApiError) {
-        return error.message
-      }
-      if (error instanceof Error) {
-        return error.message
-      }
-      return 'Request failed'
-    }
 
     async function loadDashboard() {
       try {
@@ -114,6 +142,9 @@ export function DashboardPage() {
             return
           }
 
+          setDiscoveryMethods(
+            methods.items.map((item) => item.discovery_method),
+          )
           setKpis({
             status: 'ready',
             data: {
@@ -155,7 +186,50 @@ export function DashboardPage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (connection.status !== 'connected' || isDebouncingSearch) {
+      return
+    }
+
+    let cancelled = false
+
+    async function loadDisplayedCount(queryParams: PlanetListQueryParams) {
+      setDisplayedLoading(true)
+      setDisplayedError(null)
+
+      try {
+        const response = await getPlanets({
+          ...queryParams,
+          limit: 1,
+        })
+
+        if (cancelled) {
+          return
+        }
+
+        setDisplayedPlanets(response.total)
+      } catch (error) {
+        if (cancelled) {
+          return
+        }
+
+        setDisplayedError(toErrorMessage(error))
+      } finally {
+        if (!cancelled) {
+          setDisplayedLoading(false)
+        }
+      }
+    }
+
+    void loadDisplayedCount(listQueryParams)
+
+    return () => {
+      cancelled = true
+    }
+  }, [connection.status, isDebouncingSearch, listQueryParams])
+
   const kpiValues = kpis.status === 'ready' ? kpis.data : null
+  const filtersDisabled = connection.status !== 'connected'
 
   return (
     <AppShell
@@ -163,9 +237,13 @@ export function DashboardPage() {
         <Header connection={connection} totalPlanets={datasetTotal} />
       }
       sidebar={
-        <DashboardPlaceholder
-          title="Filters"
-          description="Filter panel will be implemented in the next step."
+        <FilterPanel
+          filters={filters}
+          discoveryMethods={discoveryMethods}
+          onFilterChange={setFilter}
+          onReset={resetFilters}
+          isDebouncingSearch={isDebouncingSearch}
+          disabled={filtersDisabled}
         />
       }
     >
@@ -186,7 +264,16 @@ export function DashboardPage() {
             />
             <KpiCard
               label="Displayed"
-              value={kpiValues.displayedPlanets.toLocaleString()}
+              value={
+                displayedLoading
+                  ? '…'
+                  : displayedError
+                    ? '—'
+                    : displayedPlanets != null
+                      ? displayedPlanets.toLocaleString()
+                      : '…'
+              }
+              error={displayedError ?? undefined}
             />
             <KpiCard
               label="Discovery methods"

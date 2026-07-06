@@ -178,6 +178,17 @@ body {
   font-weight: 600;
 }
 
+.kpi-card__error {
+  margin: 0.35rem 0 0;
+  color: var(--color-error);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.range-field:disabled {
+  opacity: 0.6;
+}
+
 .dashboard__content {
   display: flex;
   flex-direction: column;
@@ -218,6 +229,119 @@ body {
   margin: 0.5rem 0 0;
   color: var(--color-muted);
   font-size: 0.875rem;
+}
+
+.filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.filter-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.filter-panel__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.filter-panel__reset {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.filter-panel__reset:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.filter-panel__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.filter-panel__field,
+.method-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.filter-panel__label,
+.method-select__label,
+.range-field__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.filter-panel__input,
+.method-select__input,
+.range-field__input {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.filter-panel__input:disabled,
+.method-select__input:disabled,
+.range-field__input:disabled {
+  opacity: 0.6;
+}
+
+.filter-panel__hint {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.filter-panel__toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.filter-panel__toggle input {
+  margin-top: 0.2rem;
+}
+
+.range-field {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.range-field__inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.range-field__control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.range-field__control-label {
+  color: var(--color-muted);
+  font-size: 0.75rem;
 }
 
 @media (max-width: 1024px) {
