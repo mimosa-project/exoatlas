@@ -431,6 +431,8 @@ API の稼働確認を返す。
 - `http://localhost:5173`
 - `http://127.0.0.1:5173`
 
+環境変数 `EXOATLAS_CORS_ORIGINS` にカンマ区切りでオリジンを指定すると、上記既定値を置き換える。未設定時は Vite 開発サーバー向けの2オリジンを使用する。
+
 本番ビルドやデプロイ方式が決まった段階で許可オリジンを見直す。
 
 ## 11. パフォーマンス方針
@@ -475,5 +477,8 @@ API の稼働確認を返す。
    - `GET /api/sky-map` を追加する。　-> 済
    - 一覧／チャート系 API に `distance` フィルターを追加する（`distance_min`, `distance_max`）。　-> 済
 8. pytest で主要 API とサービス層を検証する。　-> 済
-9. フロントエンドから利用する API URL と CORS を確認する。
+9. フロントエンドから利用する API URL と CORS を確認する。　-> 済
+   - フロントエンド向け GET ルート（`/health`, `/api/planets`, `/api/planets/{planet_name}`, `/api/discoveries/timeline`, `/api/discovery-methods`, `/api/scatter/orbit-radius`, `/api/sky-map`）を pytest で検証する。　-> 済
+   - Vite 開発サーバー向け CORS（`http://localhost:5173`, `http://127.0.0.1:5173`）を確認し、`EXOATLAS_CORS_ORIGINS` で上書き可能にする。　-> 済
+   - バックエンド起動手順を `README.md` に追記する。　-> 済
 
