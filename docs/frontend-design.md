@@ -441,7 +441,7 @@ API 関数例:
 2. API ベース URL と `fetch` クライアントを作る。　-> 済
 3. 型定義を作る。　-> 済
 4. `GET /health` または `GET /api/planets` への接続確認を行う。　-> 済
-5. `AppShell` と `DashboardPage` を作る。
+5. `AppShell` と `DashboardPage` を作る。　-> 済
 6. `FilterPanel` とフィルター状態管理を作る。
 7. `PlanetTable` を実装する。
 8. `PlanetDetailDrawer` を実装する。
