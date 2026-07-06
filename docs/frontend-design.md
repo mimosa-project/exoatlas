@@ -437,7 +437,7 @@ API 関数例:
 
 ## 14. 実装順序
 
-1. Vite + React + TypeScript の最小構成を作る。
+1. Vite + React + TypeScript の最小構成を作る。　-> 済
 2. API ベース URL と `fetch` クライアントを作る。
 3. 型定義を作る。
 4. `GET /health` または `GET /api/planets` への接続確認を行う。
