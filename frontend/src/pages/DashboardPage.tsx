@@ -9,6 +9,7 @@ import {
   Header,
   type ApiConnectionState,
 } from '../components/layout/Header'
+import { PlanetTable } from '../components/planets/PlanetTable'
 import { usePlanetFilters } from '../hooks/usePlanetFilters'
 import type { PlanetListQueryParams } from '../types/api'
 
@@ -101,6 +102,7 @@ export function DashboardPage() {
   const [displayedPlanets, setDisplayedPlanets] = useState<number | null>(null)
   const [displayedLoading, setDisplayedLoading] = useState(false)
   const [displayedError, setDisplayedError] = useState<string | null>(null)
+  const [, setSelectedPlanetName] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -301,9 +303,10 @@ export function DashboardPage() {
             title="Sky map"
             description="Right ascension and declination distribution."
           />
-          <DashboardPlaceholder
-            title="Planet table"
-            description="Sortable, paginated list of exoplanets."
+          <PlanetTable
+            queryParams={listQueryParams}
+            disabled={filtersDisabled}
+            onSelectPlanet={setSelectedPlanetName}
           />
         </div>
       </div>

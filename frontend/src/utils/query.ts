@@ -2,7 +2,11 @@ import type {
   ChartFilterQueryParams,
   PlanetListQueryParams,
 } from '../types/api'
-import type { PaginationState, PlanetFilters } from '../types/filters'
+import type {
+  PaginationState,
+  PlanetFilters,
+  PlanetTableSort,
+} from '../types/filters'
 
 export const DEFAULT_PLANET_FILTERS: PlanetFilters = {
   q: '',
@@ -31,6 +35,7 @@ function appendNumericParam(
 export function toPlanetListQueryParams(
   filters: PlanetFilters,
   pagination?: PaginationState,
+  sort?: PlanetTableSort,
 ): PlanetListQueryParams {
   const params: PlanetListQueryParams = {}
   const trimmedQuery = filters.q.trim()
@@ -58,6 +63,11 @@ export function toPlanetListQueryParams(
   if (pagination) {
     params.limit = pagination.limit
     params.offset = pagination.offset
+  }
+
+  if (sort) {
+    params.sort = sort.sort
+    params.order = sort.order
   }
 
   return params

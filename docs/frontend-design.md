@@ -443,7 +443,7 @@ API 関数例:
 4. `GET /health` または `GET /api/planets` への接続確認を行う。　-> 済
 5. `AppShell` と `DashboardPage` を作る。　-> 済
 6. `FilterPanel` とフィルター状態管理を作る。　-> 済
-7. `PlanetTable` を実装する。
+7. `PlanetTable` を実装する。　-> 済
 8. `PlanetDetailDrawer` を実装する。
 9. `DiscoveryTimeline` を実装する。
 10. `OrbitScatterPlot` を実装する。
