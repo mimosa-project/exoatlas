@@ -3,6 +3,7 @@ import { getDiscoveryMethods } from '../api/discoveries'
 import { ApiError } from '../api/client'
 import { getHealth } from '../api/health'
 import { getPlanets } from '../api/planets'
+import { DiscoveryTimeline } from '../components/charts/DiscoveryTimeline'
 import { FilterPanel } from '../components/filters/FilterPanel'
 import { AppShell } from '../components/layout/AppShell'
 import {
@@ -91,6 +92,7 @@ export function DashboardPage() {
     setFilter,
     resetFilters,
     listQueryParams,
+    chartQueryParams,
     isDebouncingSearch,
   } = usePlanetFilters()
 
@@ -234,6 +236,13 @@ export function DashboardPage() {
   }, [connection.status, isDebouncingSearch, listQueryParams])
 
   const closePlanetDetail = useCallback(() => setSelectedPlanetName(null), [])
+  const selectDiscoveryYear = useCallback(
+    (year: number) => {
+      setFilter('discoveryYearMin', year)
+      setFilter('discoveryYearMax', year)
+    },
+    [setFilter],
+  )
 
   const kpiValues = kpis.status === 'ready' ? kpis.data : null
   const filtersDisabled = connection.status !== 'connected'
@@ -303,9 +312,10 @@ export function DashboardPage() {
       </section>
 
       <div className="dashboard__content">
-        <DashboardPlaceholder
-          title="Discovery timeline"
-          description="Stacked bar chart of discoveries by year and method."
+        <DiscoveryTimeline
+          queryParams={chartQueryParams}
+          disabled={filtersDisabled}
+          onSelectYear={selectDiscoveryYear}
         />
         <DashboardPlaceholder
           title="Orbit scatter plot"

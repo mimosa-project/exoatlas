@@ -343,7 +343,7 @@ exoatlas/
 
 ## 14. 未決事項
 
-- フロントエンドのチャートライブラリを Plotly.js と Apache ECharts のどちらにするか。
+- フロントエンドのチャートライブラリを Plotly.js と Apache ECharts のどちらにするか。→ Plotly.js を採用（決定済み。`plotly.js-dist-min` 3.x を動的 import で利用。`docs/tasks/discovery-timeline.md` 参照）。
 - UI テーマを暗色中心にするか、明色中心にするか。
 - CSV を毎回読み込むか、軽量な中間ファイルへ変換するか。
 - 将来的に SQLite や DuckDB を導入するか。
