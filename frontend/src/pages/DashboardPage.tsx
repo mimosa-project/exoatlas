@@ -4,6 +4,7 @@ import { ApiError } from '../api/client'
 import { getHealth } from '../api/health'
 import { getPlanets } from '../api/planets'
 import { DiscoveryTimeline } from '../components/charts/DiscoveryTimeline'
+import { OrbitScatterPlot } from '../components/charts/OrbitScatterPlot'
 import { FilterPanel } from '../components/filters/FilterPanel'
 import { AppShell } from '../components/layout/AppShell'
 import {
@@ -317,9 +318,10 @@ export function DashboardPage() {
           disabled={filtersDisabled}
           onSelectYear={selectDiscoveryYear}
         />
-        <DashboardPlaceholder
-          title="Orbit scatter plot"
-          description="Orbital period versus radius or mass."
+        <OrbitScatterPlot
+          queryParams={chartQueryParams}
+          disabled={filtersDisabled}
+          onSelectPlanet={setSelectedPlanetName}
         />
         <div className="dashboard__split">
           <DashboardPlaceholder
