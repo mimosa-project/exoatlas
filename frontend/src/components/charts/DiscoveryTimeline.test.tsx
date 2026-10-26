@@ -418,3 +418,23 @@ describe('DiscoveryTimeline stale responses (AC 21)', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })
+
+describe('DiscoveryTimeline chart theme (state polish AC 10)', () => {
+  it('passes a themed layout that keeps the timeline keys', async () => {
+    getDiscoveryTimelineMock.mockResolvedValue(response())
+
+    render(<DiscoveryTimeline queryParams={EMPTY_PARAMS} onSelectYear={vi.fn()} />)
+    await screen.findByTestId('plotly-chart')
+
+    expect(lastChartProps().layout).toMatchObject({
+      barmode: 'stack',
+      showlegend: true,
+      paper_bgcolor: 'rgba(0,0,0,0)',
+      plot_bgcolor: 'rgba(0,0,0,0)',
+      font: { color: '#e7ecf3' },
+      legend: { orientation: 'h' },
+      xaxis: { title: { text: 'Discovery year' }, tickformat: 'd', gridcolor: '#2f3d52' },
+      yaxis: { title: { text: 'Planets' }, gridcolor: '#2f3d52' },
+    })
+  })
+})

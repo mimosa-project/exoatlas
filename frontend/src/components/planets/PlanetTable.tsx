@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { ApiError } from '../../api/client'
 import { getPlanets } from '../../api/planets'
 import {
   formatDistance,
@@ -14,6 +13,10 @@ import type {
   PlanetSortField,
   SortOrder,
 } from '../../types/api'
+import { toErrorMessage } from '../../utils/error'
+import { EmptyState } from '../ui/EmptyState'
+import { ErrorMessage } from '../ui/ErrorMessage'
+import { LoadingState } from '../ui/LoadingState'
 
 const PAGE_SIZE = 50
 
@@ -41,16 +44,6 @@ const COLUMNS: Column[] = [
   { key: 'mass_earth', label: 'Mass' },
   { key: 'distance_parsec', label: 'Distance' },
 ]
-
-function toErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    return error.message
-  }
-  if (error instanceof Error) {
-    return error.message
-  }
-  return 'Request failed'
-}
 
 function renderCellContent(column: PlanetSortField, item: PlanetListItem): string {
   switch (column) {
@@ -200,36 +193,24 @@ export function PlanetTable({
   return (
     <section className="planet-table" aria-label="Planet list">
       {status === 'waiting' ? (
-        <p
-          className="planet-table__status"
-          data-testid="planet-table-status-waiting"
-          role="status"
-        >
+        <LoadingState className="planet-table__status" data-testid="planet-table-status-waiting">
           Waiting for API connection…
-        </p>
+        </LoadingState>
       ) : null}
       {status === 'loading' ? (
-        <p
-          className="planet-table__status"
-          data-testid="planet-table-status-loading"
-          role="status"
-          aria-live="polite"
-        >
+        <LoadingState className="planet-table__status" data-testid="planet-table-status-loading">
           Loading planets…
-        </p>
+        </LoadingState>
       ) : null}
       {status === 'error' ? (
-        <p className="planet-table__status planet-table__status--error" role="alert">
+        <ErrorMessage className="planet-table__status planet-table__status--error">
           {errorMessage}
-        </p>
+        </ErrorMessage>
       ) : null}
       {isEmpty ? (
-        <p
-          className="planet-table__status"
-          data-testid="planet-table-status-empty"
-        >
+        <EmptyState className="planet-table__status" data-testid="planet-table-status-empty">
           No planets match the current filters.
-        </p>
+        </EmptyState>
       ) : null}
 
       <div className="planet-table__scroll">

@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { ApiError } from '../../api/client'
 import { getPlanetDetail } from '../../api/planets'
 import {
   formatDegrees,
@@ -15,6 +14,9 @@ import {
   NOT_AVAILABLE_TEXT,
 } from '../../utils/format'
 import type { PlanetDetail } from '../../types/api'
+import { toErrorMessage } from '../../utils/error'
+import { ErrorMessage } from '../ui/ErrorMessage'
+import { LoadingState } from '../ui/LoadingState'
 
 type PlanetDetailDrawerProps = {
   planetName: string | null
@@ -34,16 +36,6 @@ type DetailSection = {
   key: string
   title: string
   items: DetailItem[]
-}
-
-function toErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    return error.message
-  }
-  if (error instanceof Error) {
-    return error.message
-  }
-  return 'Request failed'
 }
 
 function textOrNotAvailable(value: string | null): string {
@@ -225,14 +217,14 @@ export function PlanetDetailDrawer({ planetName, onClose }: PlanetDetailDrawerPr
       </div>
 
       {current == null ? (
-        <p className="planet-drawer__status" role="status" aria-live="polite">
+        <LoadingState className="planet-drawer__status">
           Loading details…
-        </p>
+        </LoadingState>
       ) : null}
       {current?.status === 'error' ? (
-        <p className="planet-drawer__status planet-drawer__status--error" role="alert">
+        <ErrorMessage className="planet-drawer__status planet-drawer__status--error">
           {current.message}
-        </p>
+        </ErrorMessage>
       ) : null}
       {current?.status === 'ready'
         ? buildSections(current.detail).map((section) => {

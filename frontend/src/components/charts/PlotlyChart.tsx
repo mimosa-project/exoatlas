@@ -6,6 +6,7 @@ import type {
   PlotlyHTMLElement,
   PlotMouseEvent,
 } from 'plotly.js'
+import { ErrorMessage } from '../ui/ErrorMessage'
 
 type PlotlyModule = typeof import('plotly.js-dist-min').default
 
@@ -50,6 +51,7 @@ export function PlotlyChart({ data, layout, ariaLabel, onPointClick }: PlotlyCha
   const onPointClickRef = useRef(onPointClick)
   const clickHandlerAttachedRef = useRef(false)
   const [plotly, setPlotly] = useState<PlotlyModule | null>(null)
+  const [renderFailed, setRenderFailed] = useState(false)
 
   useEffect(() => {
     onPointClickRef.current = onPointClick
@@ -65,7 +67,9 @@ export function PlotlyChart({ data, layout, ariaLabel, onPointClick }: PlotlyCha
         }
       })
       .catch(() => {
-        // The chart area stays empty when Plotly cannot be loaded.
+        if (!cancelled) {
+          setRenderFailed(true)
+        }
       })
 
     return () => {
@@ -110,14 +114,21 @@ export function PlotlyChart({ data, layout, ariaLabel, onPointClick }: PlotlyCha
     plotly
       .react(element, data, layout, PLOTLY_CONFIG)
       .then(() => {
-        if (!active || clickHandlerAttachedRef.current) {
+        // Only the latest call (still active) decides what is shown.
+        if (!active) {
+          return
+        }
+        setRenderFailed(false)
+        if (clickHandlerAttachedRef.current) {
           return
         }
         clickHandlerAttachedRef.current = true
         ;(element as unknown as PlotlyHTMLElement).on('plotly_click', handleClick)
       })
       .catch(() => {
-        // Rendering failures leave the chart area empty.
+        if (active) {
+          setRenderFailed(true)
+        }
       })
 
     return () => {
@@ -126,6 +137,11 @@ export function PlotlyChart({ data, layout, ariaLabel, onPointClick }: PlotlyCha
   }, [plotly, data, layout])
 
   return (
-    <div ref={containerRef} className="plotly-chart" role="img" aria-label={ariaLabel} />
+    <>
+      <div ref={containerRef} className="plotly-chart" role="img" aria-label={ariaLabel} />
+      {renderFailed ? (
+        <ErrorMessage className="plotly-chart__error">Chart could not be displayed.</ErrorMessage>
+      ) : null}
+    </>
   )
 }

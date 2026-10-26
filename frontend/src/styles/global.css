@@ -286,7 +286,7 @@ body {
 
 .dashboard__split {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
 
@@ -297,27 +297,10 @@ body {
   background-color: var(--color-surface);
 }
 
-.dashboard-panel--placeholder {
-  min-height: 10rem;
-  background:
-    linear-gradient(
-      135deg,
-      rgb(255 255 255 / 0.02),
-      rgb(255 255 255 / 0)
-    ),
-    var(--color-surface);
-}
-
 .dashboard-panel__title {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-}
-
-.dashboard-panel__description {
-  margin: 0.5rem 0 0;
-  color: var(--color-muted);
-  font-size: 0.875rem;
 }
 
 .chart-panel {
@@ -384,7 +367,34 @@ body {
 
 .plotly-chart {
   width: 100%;
-  min-height: 20rem;
+  height: 24rem;
+}
+
+.state-message {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.state-message--error {
+  color: var(--color-error);
+}
+
+.header__retry:focus-visible {
+  outline: 2px solid var(--color-success);
+  outline-offset: 2px;
+}
+
+.header__retry {
+  margin-top: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
 }
 
 .filter-panel {
@@ -596,10 +606,6 @@ body {
 @media (max-width: 1024px) {
   .dashboard__kpi-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dashboard__split {
-    grid-template-columns: 1fr;
   }
 }
 

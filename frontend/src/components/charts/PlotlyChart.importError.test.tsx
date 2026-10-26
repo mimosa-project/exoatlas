@@ -29,7 +29,7 @@ afterEach(() => {
 })
 
 describe('PlotlyChart dynamic import failure (AC 12)', () => {
-  it('swallows the import error without an unhandled rejection and leaves the chart empty', async () => {
+  it('swallows the import error without an unhandled rejection and shows a text error after the chart', async () => {
     render(
       <PlotlyChart
         data={[{ type: 'bar', x: [2000], y: [1] }]}
@@ -42,7 +42,39 @@ describe('PlotlyChart dynamic import failure (AC 12)', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    expect(screen.getByRole('img', { name: 'Test chart' })).toBeInTheDocument()
+    const chart = screen.getByRole('img', { name: 'Test chart' })
+    expect(chart).toBeInTheDocument()
+    expect(unhandled).toEqual([])
+
+    // state polish AC 11: a text error is shown as a sibling of the chart.
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Chart could not be displayed.')
+    expect(chart).not.toContainElement(alert)
+    expect(chart.nextElementSibling).toBe(alert)
+  })
+
+  it('keeps the failure message when data changes after the import failed', async () => {
+    const { rerender } = render(
+      <PlotlyChart
+        data={[{ type: 'bar', x: [2000], y: [1] }]}
+        layout={{}}
+        ariaLabel="Test chart"
+      />,
+    )
+    await screen.findByRole('alert')
+
+    rerender(
+      <PlotlyChart
+        data={[{ type: 'bar', x: [2001], y: [2] }]}
+        layout={{}}
+        ariaLabel="Test chart"
+      />,
+    )
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Chart could not be displayed.')
     expect(unhandled).toEqual([])
   })
 })

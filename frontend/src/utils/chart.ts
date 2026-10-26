@@ -30,6 +30,10 @@ const DISCOVERY_METHOD_COLORS: Record<string, string> = {
 
 const FALLBACK_COLOR = '#8b9aab'
 
+// Mirrors --color-text / --color-border in global.css.
+const CHART_TEXT_COLOR = '#e7ecf3'
+const CHART_GRID_COLOR = '#2f3d52'
+
 export type TimelineTrace = Partial<PlotData> & {
   type: 'bar'
   name: string
@@ -197,17 +201,36 @@ export function buildOrbitScatterTraces(
   }))
 }
 
+export function withChartTheme(layout: Partial<Layout>): Partial<Layout> {
+  const axisTheme = () => ({
+    gridcolor: CHART_GRID_COLOR,
+    zerolinecolor: CHART_GRID_COLOR,
+    automargin: true,
+  })
+
+  return {
+    paper_bgcolor: 'rgba(0,0,0,0)',
+    plot_bgcolor: 'rgba(0,0,0,0)',
+    ...layout,
+    font: { color: CHART_TEXT_COLOR, ...layout.font },
+    xaxis: { ...axisTheme(), ...layout.xaxis },
+    yaxis: { ...axisTheme(), ...layout.yaxis },
+    legend: { orientation: 'h', x: 0, y: -0.25, yanchor: 'top', ...layout.legend },
+    margin: { t: 16, r: 16, b: 48, l: 56, ...layout.margin },
+  }
+}
+
 export function buildOrbitScatterLayout(
   yAxis: ScatterYAxis,
   logScale: boolean,
 ): Partial<Layout> {
   const type = logScale ? 'log' : 'linear'
-  return {
+  return withChartTheme({
     showlegend: true,
     hovermode: 'closest',
     xaxis: { title: { text: 'Orbital period (days)' }, type },
     yaxis: { title: { text: SCATTER_Y_AXIS_TITLES[yAxis] }, type },
-  }
+  })
 }
 
 const SKY_MAP_MARKER_OPACITY = 0.6
@@ -258,13 +281,13 @@ export function buildSkyMapTraces(items: SkyMapItem[]): SkyMapTrace[] {
 }
 
 export function buildSkyMapLayout(): Partial<Layout> {
-  return {
+  return withChartTheme({
     showlegend: true,
     hovermode: 'closest',
     // Right ascension increases to the left, as on a sky chart.
     xaxis: { title: { text: 'Right ascension (°)' }, range: [360, 0] },
     yaxis: { title: { text: 'Declination (°)' }, range: [-90, 90] },
-  }
+  })
 }
 
 // Planet name of a clicked scatter point whose customdata starts with the

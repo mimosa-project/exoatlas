@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getDiscoveryMethods } from '../api/discoveries'
-import { ApiError } from '../api/client'
 import { getHealth } from '../api/health'
 import { getPlanets } from '../api/planets'
 import { DiscoveryTimeline } from '../components/charts/DiscoveryTimeline'
@@ -14,8 +13,11 @@ import {
 } from '../components/layout/Header'
 import { PlanetDetailDrawer } from '../components/planets/PlanetDetailDrawer'
 import { PlanetTable } from '../components/planets/PlanetTable'
+import { ErrorMessage } from '../components/ui/ErrorMessage'
+import { LoadingState } from '../components/ui/LoadingState'
 import { usePlanetFilters } from '../hooks/usePlanetFilters'
 import type { PlanetListQueryParams } from '../types/api'
+import { toErrorMessage } from '../utils/error'
 
 type DashboardKpis = {
   totalPlanets: number
@@ -29,16 +31,6 @@ type KpiLoadState =
   | { status: 'loading' }
   | { status: 'ready'; data: DashboardKpis }
   | { status: 'error'; message: string }
-
-function toErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    return error.message
-  }
-  if (error instanceof Error) {
-    return error.message
-  }
-  return 'Request failed'
-}
 
 function formatDiscoveryYearRange(
   oldestYear: number | null | undefined,
@@ -65,9 +57,9 @@ function KpiCard({
       <p className="kpi-card__label">{label}</p>
       <p className="kpi-card__value">{value}</p>
       {error ? (
-        <p className="kpi-card__error" role="alert">
+        <ErrorMessage className="kpi-card__error">
           {error}
-        </p>
+        </ErrorMessage>
       ) : null}
     </article>
   )
@@ -95,6 +87,8 @@ export function DashboardPage() {
   const [selectedPlanetName, setSelectedPlanetName] = useState<string | null>(
     null,
   )
+  // Incremented by "Retry connection" to re-run the connection check.
+  const [connectionAttempt, setConnectionAttempt] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -178,7 +172,7 @@ export function DashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [connectionAttempt])
 
   useEffect(() => {
     if (connection.status !== 'connected' || isDebouncingSearch) {
@@ -222,6 +216,11 @@ export function DashboardPage() {
     }
   }, [connection.status, isDebouncingSearch, listQueryParams])
 
+  const retryConnection = useCallback(() => {
+    setConnection({ status: 'loading' })
+    setKpis({ status: 'idle' })
+    setConnectionAttempt((attempt) => attempt + 1)
+  }, [])
   const closePlanetDetail = useCallback(() => setSelectedPlanetName(null), [])
   const selectDiscoveryYear = useCallback(
     (year: number) => {
@@ -237,7 +236,11 @@ export function DashboardPage() {
   return (
     <AppShell
       header={
-        <Header connection={connection} totalPlanets={datasetTotal} />
+        <Header
+          connection={connection}
+          totalPlanets={datasetTotal}
+          onRetry={retryConnection}
+        />
       }
       sidebar={
         <FilterPanel
@@ -260,12 +263,12 @@ export function DashboardPage() {
     >
       <section className="dashboard__kpis" aria-label="Key metrics">
         {kpis.status === 'loading' && connection.status === 'connected' ? (
-          <p className="dashboard__kpis-loading">Loading metrics…</p>
+          <LoadingState className="dashboard__kpis-loading">Loading metrics…</LoadingState>
         ) : null}
         {kpis.status === 'error' ? (
-          <p className="dashboard__kpis-error" role="alert">
+          <ErrorMessage className="dashboard__kpis-error">
             {kpis.message}
-          </p>
+          </ErrorMessage>
         ) : null}
         {kpiValues ? (
           <div className="dashboard__kpi-grid">

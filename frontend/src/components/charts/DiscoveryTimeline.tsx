@@ -1,12 +1,15 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import type { Layout } from 'plotly.js'
-import { ApiError } from '../../api/client'
 import { getDiscoveryTimeline } from '../../api/discoveries'
-import { buildTimelineTraces } from '../../utils/chart'
+import { buildTimelineTraces, withChartTheme } from '../../utils/chart'
 import type {
   ChartFilterQueryParams,
   DiscoveryTimelineResponse,
 } from '../../types/api'
+import { toErrorMessage } from '../../utils/error'
+import { EmptyState } from '../ui/EmptyState'
+import { ErrorMessage } from '../ui/ErrorMessage'
+import { LoadingState } from '../ui/LoadingState'
 import { PlotlyChart, type PlotlyPointClick } from './PlotlyChart'
 
 type DiscoveryTimelineProps = {
@@ -17,22 +20,12 @@ type DiscoveryTimelineProps = {
 
 type FetchStatus = 'waiting' | 'loading' | 'ready' | 'error'
 
-const TIMELINE_LAYOUT: Partial<Layout> = {
+const TIMELINE_LAYOUT: Partial<Layout> = withChartTheme({
   barmode: 'stack',
   showlegend: true,
   xaxis: { title: { text: 'Discovery year' }, tickformat: 'd' },
   yaxis: { title: { text: 'Planets' } },
-}
-
-function toErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    return error.message
-  }
-  if (error instanceof Error) {
-    return error.message
-  }
-  return 'Request failed'
-}
+})
 
 function toYear(point: PlotlyPointClick): number | null {
   const value = point.customdata ?? point.x
@@ -115,22 +108,24 @@ export function DiscoveryTimeline({
         Discovery timeline
       </h2>
       {status === 'waiting' ? (
-        <p className="chart-panel__status" role="status">
+        <LoadingState className="chart-panel__status">
           Waiting for API connection…
-        </p>
+        </LoadingState>
       ) : null}
       {status === 'loading' ? (
-        <p className="chart-panel__status" role="status" aria-live="polite">
+        <LoadingState className="chart-panel__status">
           Loading discovery timeline…
-        </p>
+        </LoadingState>
       ) : null}
       {status === 'error' ? (
-        <p className="chart-panel__status chart-panel__status--error" role="alert">
+        <ErrorMessage className="chart-panel__status chart-panel__status--error">
           {errorMessage}
-        </p>
+        </ErrorMessage>
       ) : null}
       {status === 'ready' && traces.length === 0 ? (
-        <p className="chart-panel__status">No discoveries match the current filters.</p>
+        <EmptyState className="chart-panel__status">
+          No discoveries match the current filters.
+        </EmptyState>
       ) : null}
       {status === 'ready' && traces.length > 0 ? (
         <PlotlyChart

@@ -1,6 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import { getOrbitScatter } from '../../api/charts'
-import { ApiError } from '../../api/client'
 import {
   buildOrbitScatterLayout,
   buildOrbitScatterTraces,
@@ -11,6 +10,10 @@ import type {
   ScatterOrbitRadiusResponse,
   ScatterYAxis,
 } from '../../types/api'
+import { toErrorMessage } from '../../utils/error'
+import { EmptyState } from '../ui/EmptyState'
+import { ErrorMessage } from '../ui/ErrorMessage'
+import { LoadingState } from '../ui/LoadingState'
 import { PlotlyChart, type PlotlyPointClick } from './PlotlyChart'
 
 type OrbitScatterPlotProps = {
@@ -30,16 +33,6 @@ const Y_AXIS_OPTIONS: { value: ScatterYAxis; label: string }[] = [
   { value: 'radius', label: 'Radius' },
   { value: 'mass', label: 'Mass' },
 ]
-
-function toErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    return error.message
-  }
-  if (error instanceof Error) {
-    return error.message
-  }
-  return 'Request failed'
-}
 
 export function OrbitScatterPlot({
   queryParams,
@@ -146,22 +139,24 @@ export function OrbitScatterPlot({
         </div>
       </div>
       {status === 'waiting' ? (
-        <p className="chart-panel__status" role="status">
+        <LoadingState className="chart-panel__status">
           Waiting for API connection…
-        </p>
+        </LoadingState>
       ) : null}
       {status === 'loading' ? (
-        <p className="chart-panel__status" role="status">
+        <LoadingState className="chart-panel__status">
           Loading orbit scatter plot…
-        </p>
+        </LoadingState>
       ) : null}
       {status === 'error' ? (
-        <p className="chart-panel__status chart-panel__status--error" role="alert">
+        <ErrorMessage className="chart-panel__status chart-panel__status--error">
           {errorMessage}
-        </p>
+        </ErrorMessage>
       ) : null}
       {status === 'ready' && traces.length === 0 ? (
-        <p className="chart-panel__status">No planets match the current filters.</p>
+        <EmptyState className="chart-panel__status">
+          No planets match the current filters.
+        </EmptyState>
       ) : null}
       {status === 'ready' && traces.length > 0 ? (
         <PlotlyChart

@@ -353,3 +353,137 @@ describe('PlotlyChart cleanup and failures (AC 12)', () => {
     expect(clickHandlerCount(element)).toBe(0)
   })
 })
+
+describe('PlotlyChart render failure message (state polish AC 12-13)', () => {
+  it('shows no failure message while rendering succeeds', async () => {
+    render(<PlotlyChart data={DATA} layout={LAYOUT} ariaLabel="Test chart" />)
+    await flush()
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('shows "Chart could not be displayed." next to the chart when Plotly.react rejects, and clears it after a later success', async () => {
+    plotly.react.mockImplementationOnce((element: FakeGraphElement) => {
+      attachOn(element)
+      return Promise.reject(new Error('render failed'))
+    })
+    const { rerender } = render(
+      <PlotlyChart data={DATA} layout={LAYOUT} ariaLabel="Test chart" />,
+    )
+    await flush()
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('Chart could not be displayed.')
+    const chart = screen.getByRole('img', { name: 'Test chart' })
+    expect(chart).not.toContainElement(alert)
+    expect(chart.nextElementSibling).toBe(alert)
+
+    rerender(<PlotlyChart data={[...DATA]} layout={LAYOUT} ariaLabel="Test chart" />)
+    await flush()
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Test chart' })).toBeInTheDocument()
+  })
+
+  // "No state update after unmount" (AC 13) is not observable in the DOM; it is
+  // checked in code review. This test only guards against crashes and
+  // unhandled rejections when a pending call rejects after unmount.
+  it('does not crash or leave an unhandled rejection when Plotly.react rejects after unmount', async () => {
+    const unhandled: unknown[] = []
+    const recordUnhandled = (reason: unknown) => unhandled.push(reason)
+    const nodeProcess = (
+      globalThis as unknown as {
+        process: {
+          on(event: 'unhandledRejection', listener: (reason: unknown) => void): void
+          off(event: 'unhandledRejection', listener: (reason: unknown) => void): void
+        }
+      }
+    ).process
+    nodeProcess.on('unhandledRejection', recordUnhandled)
+    const pending = createDeferred<HTMLElement>()
+    plotly.react.mockImplementationOnce((element: FakeGraphElement) => {
+      attachOn(element)
+      return pending.promise
+    })
+    const { unmount } = render(
+      <PlotlyChart data={DATA} layout={LAYOUT} ariaLabel="Test chart" />,
+    )
+    await flush()
+
+    unmount()
+    await act(async () => {
+      pending.reject(new Error('late failure'))
+    })
+    await flush()
+    nodeProcess.off('unhandledRejection', recordUnhandled)
+
+    expect(unhandled).toEqual([])
+  })
+})
+
+describe('PlotlyChart failure message uses only the latest Plotly.react result (state polish AC 12)', () => {
+  it('ignores a rejection from a superseded call that settles after a newer call succeeded', async () => {
+    const first = createDeferred<HTMLElement>()
+    plotly.react.mockImplementationOnce((element: FakeGraphElement) => {
+      attachOn(element)
+      return first.promise
+    })
+    const { rerender } = render(
+      <PlotlyChart data={DATA} layout={LAYOUT} ariaLabel="Test chart" />,
+    )
+    await flush()
+
+    rerender(<PlotlyChart data={[...DATA]} layout={LAYOUT} ariaLabel="Test chart" />)
+    await flush()
+    expect(plotly.react).toHaveBeenCalledTimes(2)
+
+    await act(async () => {
+      first.reject(new Error('stale failure'))
+    })
+    await flush()
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('keeps an existing failure message while the newer call is pending, and ignores a superseded success', async () => {
+    plotly.react.mockImplementationOnce((element: FakeGraphElement) => {
+      attachOn(element)
+      return Promise.reject(new Error('render failed'))
+    })
+    const { rerender } = render(
+      <PlotlyChart data={DATA} layout={LAYOUT} ariaLabel="Test chart" />,
+    )
+    await flush()
+    expect(screen.getByRole('alert')).toHaveTextContent('Chart could not be displayed.')
+
+    const second = createDeferred<HTMLElement>()
+    plotly.react.mockImplementationOnce((element: FakeGraphElement) => {
+      attachOn(element)
+      return second.promise
+    })
+    rerender(<PlotlyChart data={[...DATA]} layout={LAYOUT} ariaLabel="Test chart" />)
+    await flush()
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Chart could not be displayed.')
+
+    const third = createDeferred<HTMLElement>()
+    plotly.react.mockImplementationOnce((element: FakeGraphElement) => {
+      attachOn(element)
+      return third.promise
+    })
+    rerender(<PlotlyChart data={[...DATA]} layout={LAYOUT} ariaLabel="Test chart" />)
+    await flush()
+
+    await act(async () => {
+      second.resolve(graphElement())
+    })
+    await flush()
+    expect(screen.getByRole('alert')).toHaveTextContent('Chart could not be displayed.')
+
+    await act(async () => {
+      third.resolve(graphElement())
+    })
+    await flush()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+})
