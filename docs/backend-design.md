@@ -271,6 +271,8 @@ API の稼働確認を返す。
 | `discovery_method` | string | なし | 発見手法で絞り込む |
 | `disc_year_min` | integer | なし | 発見年下限 |
 | `disc_year_max` | integer | なし | 発見年上限 |
+| `distance_min` | number | なし | 距離下限 |
+| `distance_max` | number | なし | 距離上限 |
 | `group_by_method` | boolean | `true` | 発見手法別に分けるか |
 
 レスポンス例:

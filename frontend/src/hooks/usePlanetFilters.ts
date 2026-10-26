@@ -7,16 +7,99 @@ import {
 } from '../utils/query'
 import { useDebouncedValue } from './useDebouncedValue'
 
+type NumericFilters = Pick<
+  PlanetFilters,
+  | 'discoveryYearMin'
+  | 'discoveryYearMax'
+  | 'radiusMin'
+  | 'radiusMax'
+  | 'massMin'
+  | 'massMax'
+  | 'orbitalPeriodMin'
+  | 'orbitalPeriodMax'
+  | 'distanceMin'
+  | 'distanceMax'
+>
+
 export function usePlanetFilters() {
   const [filters, setFilters] = useState<PlanetFilters>(DEFAULT_PLANET_FILTERS)
   const debouncedQuery = useDebouncedValue(filters.q, 300)
 
-  const debouncedFilters = useMemo(
+  const { discoveryMethod, habitableCandidate } = filters
+  const numericFilters = useMemo<NumericFilters>(
     () => ({
-      ...filters,
-      q: debouncedQuery,
+      discoveryYearMin: filters.discoveryYearMin,
+      discoveryYearMax: filters.discoveryYearMax,
+      radiusMin: filters.radiusMin,
+      radiusMax: filters.radiusMax,
+      massMin: filters.massMin,
+      massMax: filters.massMax,
+      orbitalPeriodMin: filters.orbitalPeriodMin,
+      orbitalPeriodMax: filters.orbitalPeriodMax,
+      distanceMin: filters.distanceMin,
+      distanceMax: filters.distanceMax,
     }),
-    [filters, debouncedQuery],
+    [
+      filters.discoveryYearMin,
+      filters.discoveryYearMax,
+      filters.radiusMin,
+      filters.radiusMax,
+      filters.massMin,
+      filters.massMax,
+      filters.orbitalPeriodMin,
+      filters.orbitalPeriodMax,
+      filters.distanceMin,
+      filters.distanceMax,
+    ],
+  )
+  // Range inputs are typed digit by digit, so like the search box they are
+  // applied 300ms after the last change to any of them.
+  const {
+    discoveryYearMin,
+    discoveryYearMax,
+    radiusMin,
+    radiusMax,
+    massMin,
+    massMax,
+    orbitalPeriodMin,
+    orbitalPeriodMax,
+    distanceMin,
+    distanceMax,
+  } = useDebouncedValue(numericFilters, 300)
+
+  // Depend on individual applied values (not objects) so the params keep
+  // their reference unless something that is actually sent changes.
+  const debouncedFilters = useMemo<PlanetFilters>(
+    () => ({
+      q: debouncedQuery,
+      discoveryMethod,
+      discoveryYearMin,
+      discoveryYearMax,
+      radiusMin,
+      radiusMax,
+      massMin,
+      massMax,
+      orbitalPeriodMin,
+      orbitalPeriodMax,
+      distanceMin,
+      distanceMax,
+      habitableCandidate,
+    }),
+    [
+      debouncedQuery,
+      discoveryMethod,
+      discoveryYearMin,
+      discoveryYearMax,
+      radiusMin,
+      radiusMax,
+      massMin,
+      massMax,
+      orbitalPeriodMin,
+      orbitalPeriodMax,
+      distanceMin,
+      distanceMax,
+      habitableCandidate,
+    ],
   )
 
   const listQueryParams = useMemo(
@@ -24,9 +107,31 @@ export function usePlanetFilters() {
     [debouncedFilters],
   )
 
+  // Charts only receive method, year and distance filters.
   const chartQueryParams = useMemo(
-    () => toChartFilterQueryParams(debouncedFilters),
-    [debouncedFilters],
+    () =>
+      toChartFilterQueryParams({
+        ...DEFAULT_PLANET_FILTERS,
+        discoveryMethod,
+        discoveryYearMin,
+        discoveryYearMax,
+        distanceMin,
+        distanceMax,
+      }),
+    [discoveryMethod, discoveryYearMin, discoveryYearMax, distanceMin, distanceMax],
+  )
+
+  // The timeline always shows every year, so it ignores the year filter (which
+  // is also what clicking one of its bars sets).
+  const timelineQueryParams = useMemo(
+    () =>
+      toChartFilterQueryParams({
+        ...DEFAULT_PLANET_FILTERS,
+        discoveryMethod,
+        distanceMin,
+        distanceMax,
+      }),
+    [discoveryMethod, distanceMin, distanceMax],
   )
 
   const setFilter = useCallback(
@@ -52,6 +157,7 @@ export function usePlanetFilters() {
     resetFilters,
     listQueryParams,
     chartQueryParams,
+    timelineQueryParams,
     isDebouncingSearch,
   }
 }

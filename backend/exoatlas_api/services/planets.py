@@ -65,6 +65,8 @@ def discovery_timeline(
     discovery_method: str | None = None,
     disc_year_min: int | None = None,
     disc_year_max: int | None = None,
+    distance_min: float | None = None,
+    distance_max: float | None = None,
     group_by_method: bool = True,
 ) -> list[dict[str, object]]:
     filtered = filter_planets(
@@ -72,6 +74,8 @@ def discovery_timeline(
         discovery_method=discovery_method,
         disc_year_min=disc_year_min,
         disc_year_max=disc_year_max,
+        distance_min=distance_min,
+        distance_max=distance_max,
     )
     filtered = filtered[filtered["disc_year"].notna()]
 
@@ -88,10 +92,12 @@ def discovery_timeline(
 
     results: list[dict[str, object]] = []
     for _, row in counts.iterrows():
+        # dropna=False keeps planets without a method as a missing (NA) group; return it as null.
+        method = row["discoverymethod"] if group_by_method else None
         results.append(
             {
                 "year": int(row["disc_year"]) if not pd.isna(row["disc_year"]) else None,
-                "discovery_method": row["discoverymethod"] if group_by_method else None,
+                "discovery_method": None if pd.isna(method) else method,
                 "count": int(row["count"]),
             }
         )

@@ -6,6 +6,7 @@ export type ApiConnectionState =
 type HeaderProps = {
   connection: ApiConnectionState
   totalPlanets: number | null
+  onRetry?: () => void
 }
 
 function formatStatus(connection: ApiConnectionState): string {
@@ -19,7 +20,7 @@ function formatStatus(connection: ApiConnectionState): string {
   }
 }
 
-export function Header({ connection, totalPlanets }: HeaderProps) {
+export function Header({ connection, totalPlanets, onRetry }: HeaderProps) {
   const statusClassName =
     connection.status === 'connected'
       ? 'header__status--success'
@@ -43,6 +44,11 @@ export function Header({ connection, totalPlanets }: HeaderProps) {
           {formatStatus(connection)}
           {connection.status === 'error' ? `: ${connection.message}` : null}
         </p>
+        {connection.status === 'error' && onRetry ? (
+          <button type="button" className="header__retry" onClick={onRetry}>
+            Retry connection
+          </button>
+        ) : null}
         {connection.status === 'connected' && totalPlanets != null ? (
           <p className="header__summary">
             {totalPlanets.toLocaleString()} planets in dataset

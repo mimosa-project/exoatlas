@@ -202,6 +202,8 @@ export type PlanetFilters = {
   massMax: number | null;
   orbitalPeriodMin: number | null;
   orbitalPeriodMax: number | null;
+  distanceMin: number | null;
+  distanceMax: number | null;
   habitableCandidate: boolean;
 };
 ```
@@ -266,10 +268,10 @@ API 関数例:
 
 - `getPlanets(filters, pagination, sort)`
 - `getPlanetDetail(planetName)`
-- `getDiscoveryTimeline(filters)`
+- `getDiscoveryTimeline(params)`
 - `getDiscoveryMethods()`
-- `getOrbitScatter(filters, yAxis)`
-- `getSkyMap(filters)`
+- `getOrbitScatter(params)`（`params.y_axis` で Y 軸を指定）
+- `getSkyMap(params)`
 
 ### 7.4 エラー処理
 
@@ -300,10 +302,11 @@ API 関数例:
 - 半径範囲
 - 質量範囲
 - 公転周期範囲
+- 距離範囲
 - 簡易ハビタブル候補トグル
 - リセットボタン
 
-検索文字列は `useDebouncedValue` で 300ms 程度遅延させ、入力のたびに過剰な API リクエストを送らない。
+検索文字列は `useDebouncedValue` で 300ms 程度遅延させ、入力のたびに過剰な API リクエストを送らない。数値の範囲入力（発見年・半径・質量・公転周期・距離）も同様に 300ms 遅延させてから反映する。発見手法セレクトとハビタブル候補トグルは即座に反映する。
 
 ### 8.3 `DiscoveryTimeline`
 
@@ -313,7 +316,7 @@ API 関数例:
 - Y 軸: `count`
 - 色: `discovery_method`
 
-棒をクリックした場合、該当年を `discoveryYearMin` / `discoveryYearMax` に反映する。
+棒をクリックした場合、該当年を `discoveryYearMin` / `discoveryYearMax` に反映する。タイムライン自体の取得には発見年フィルターを適用せず、常に全年を表示する（棒クリックやサイドバーで選んだ年は、一覧・KPI・他のチャートに反映される）。
 
 ### 8.4 `OrbitScatterPlot`
 
@@ -409,7 +412,7 @@ API 関数例:
 ## 12. パフォーマンス方針
 
 - 一覧 API はページングで取得する。
-- 検索入力は debounce する。
+- 検索入力と数値の範囲入力は debounce する。
 - チャート API は軽量データのみを取得する。
 - チャートコンポーネントはフィルター変更時のみ再描画する。
 - 大量点描画で重くなる場合は、API 側で件数制限やサンプリングを検討する。
@@ -444,12 +447,12 @@ API 関数例:
 5. `AppShell` と `DashboardPage` を作る。　-> 済
 6. `FilterPanel` とフィルター状態管理を作る。　-> 済
 7. `PlanetTable` を実装する。　-> 済
-8. `PlanetDetailDrawer` を実装する。
-9. `DiscoveryTimeline` を実装する。
-10. `OrbitScatterPlot` を実装する。
-11. `SkyMap` を実装する。
-12. ローディング、空状態、エラー状態を整える。
-13. Vitest で主要ユーティリティとコンポーネントを検証する。
+8. `PlanetDetailDrawer` を実装する。　-> 済
+9. `DiscoveryTimeline` を実装する。　-> 済
+10. `OrbitScatterPlot` を実装する。　-> 済
+11. `SkyMap` を実装する。　-> 済
+12. ローディング、空状態、エラー状態を整える。　-> 済
+13. Vitest で主要ユーティリティとコンポーネントを検証する。　-> 済
 
 ## 15. バックエンドとの契約
 

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { ApiError } from '../../api/client'
 import { getPlanets } from '../../api/planets'
 import {
   formatDistance,
@@ -14,6 +13,10 @@ import type {
   PlanetSortField,
   SortOrder,
 } from '../../types/api'
+import { toErrorMessage } from '../../utils/error'
+import { EmptyState } from '../ui/EmptyState'
+import { ErrorMessage } from '../ui/ErrorMessage'
+import { LoadingState } from '../ui/LoadingState'
 
 const PAGE_SIZE = 50
 
@@ -21,6 +24,7 @@ type PlanetTableProps = {
   queryParams: PlanetListQueryParams
   disabled?: boolean
   onSelectPlanet: (planetName: string) => void
+  selectedPlanetName?: string | null
 }
 
 type FetchStatus = 'waiting' | 'loading' | 'ready' | 'error'
@@ -40,16 +44,6 @@ const COLUMNS: Column[] = [
   { key: 'mass_earth', label: 'Mass' },
   { key: 'distance_parsec', label: 'Distance' },
 ]
-
-function toErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    return error.message
-  }
-  if (error instanceof Error) {
-    return error.message
-  }
-  return 'Request failed'
-}
 
 function renderCellContent(column: PlanetSortField, item: PlanetListItem): string {
   switch (column) {
@@ -87,6 +81,7 @@ export function PlanetTable({
   queryParams,
   disabled = false,
   onSelectPlanet,
+  selectedPlanetName = null,
 }: PlanetTableProps) {
   const [offset, setOffset] = useState(0)
   const [sort, setSort] = useState<PlanetSortField>('planet_name')
@@ -182,6 +177,14 @@ export function PlanetTable({
     }
   }
 
+  function isSelectedRow(item: PlanetListItem): boolean {
+    return (
+      selectedPlanetName != null &&
+      item.planet_name != null &&
+      item.planet_name === selectedPlanetName
+    )
+  }
+
   const total = data?.total ?? 0
   const canGoPrev = offset > 0
   const canGoNext = data != null && offset + PAGE_SIZE < total
@@ -190,36 +193,24 @@ export function PlanetTable({
   return (
     <section className="planet-table" aria-label="Planet list">
       {status === 'waiting' ? (
-        <p
-          className="planet-table__status"
-          data-testid="planet-table-status-waiting"
-          role="status"
-        >
+        <LoadingState className="planet-table__status" data-testid="planet-table-status-waiting">
           Waiting for API connection…
-        </p>
+        </LoadingState>
       ) : null}
       {status === 'loading' ? (
-        <p
-          className="planet-table__status"
-          data-testid="planet-table-status-loading"
-          role="status"
-          aria-live="polite"
-        >
+        <LoadingState className="planet-table__status" data-testid="planet-table-status-loading">
           Loading planets…
-        </p>
+        </LoadingState>
       ) : null}
       {status === 'error' ? (
-        <p className="planet-table__status planet-table__status--error" role="alert">
+        <ErrorMessage className="planet-table__status planet-table__status--error">
           {errorMessage}
-        </p>
+        </ErrorMessage>
       ) : null}
       {isEmpty ? (
-        <p
-          className="planet-table__status"
-          data-testid="planet-table-status-empty"
-        >
+        <EmptyState className="planet-table__status" data-testid="planet-table-status-empty">
           No planets match the current filters.
-        </p>
+        </EmptyState>
       ) : null}
 
       <div className="planet-table__scroll">
@@ -254,7 +245,12 @@ export function PlanetTable({
               ? data.items.map((item, index) => (
                   <tr
                     key={item.id ?? `${item.planet_name ?? 'unknown'}-${index}`}
-                    className="planet-table__row"
+                    className={
+                      isSelectedRow(item)
+                        ? 'planet-table__row planet-table__row--selected'
+                        : 'planet-table__row'
+                    }
+                    aria-current={isSelectedRow(item) ? 'true' : undefined}
                     tabIndex={item.planet_name != null ? 0 : undefined}
                     onClick={() => handleRowSelect(item.planet_name)}
                     onKeyDown={(event) => handleRowKeyDown(event, item.planet_name)}

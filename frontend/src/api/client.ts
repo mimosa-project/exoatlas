@@ -159,3 +159,16 @@ export async function apiGetJson<T>(
     })
   }
 }
+
+export type RequestOptions = {
+  signal?: AbortSignal
+}
+
+// Internal to the api/ modules: extra apiGetJson arguments for the options,
+// an init object only when there is a signal, so calls without one stay
+// `apiGetJson(path)`.
+export function requestInit(
+  options?: RequestOptions,
+): [] | [{ signal: AbortSignal }] {
+  return options?.signal ? [{ signal: options.signal }] : []
+}

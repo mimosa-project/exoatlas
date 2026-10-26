@@ -90,6 +90,8 @@ def read_discovery_timeline(
     discovery_method: str | None = None,
     disc_year_min: int | None = None,
     disc_year_max: int | None = None,
+    distance_min: float | None = None,
+    distance_max: float | None = None,
     group_by_method: bool = True,
 ) -> dict[str, object]:
     try:
@@ -98,6 +100,8 @@ def read_discovery_timeline(
             discovery_method=discovery_method,
             disc_year_min=disc_year_min,
             disc_year_max=disc_year_max,
+            distance_min=distance_min,
+            distance_max=distance_max,
             group_by_method=group_by_method,
         )
     except DatasetError as error:

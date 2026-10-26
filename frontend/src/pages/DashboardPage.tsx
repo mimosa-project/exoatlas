@@ -1,17 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { getDiscoveryMethods } from '../api/discoveries'
-import { ApiError } from '../api/client'
 import { getHealth } from '../api/health'
 import { getPlanets } from '../api/planets'
+import { DiscoveryTimeline } from '../components/charts/DiscoveryTimeline'
+import { OrbitScatterPlot } from '../components/charts/OrbitScatterPlot'
+import { SkyMap } from '../components/charts/SkyMap'
 import { FilterPanel } from '../components/filters/FilterPanel'
 import { AppShell } from '../components/layout/AppShell'
 import {
   Header,
   type ApiConnectionState,
 } from '../components/layout/Header'
+import { PlanetDetailDrawer } from '../components/planets/PlanetDetailDrawer'
 import { PlanetTable } from '../components/planets/PlanetTable'
+import { ErrorMessage } from '../components/ui/ErrorMessage'
+import { LoadingState } from '../components/ui/LoadingState'
 import { usePlanetFilters } from '../hooks/usePlanetFilters'
 import type { PlanetListQueryParams } from '../types/api'
+import { toErrorMessage } from '../utils/error'
 
 type DashboardKpis = {
   totalPlanets: number
@@ -26,16 +32,6 @@ type KpiLoadState =
   | { status: 'ready'; data: DashboardKpis }
   | { status: 'error'; message: string }
 
-function toErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
-    return error.message
-  }
-  if (error instanceof Error) {
-    return error.message
-  }
-  return 'Request failed'
-}
-
 function formatDiscoveryYearRange(
   oldestYear: number | null | undefined,
   newestYear: number | null | undefined,
@@ -45,21 +41,6 @@ function formatDiscoveryYearRange(
   }
 
   return `${oldestYear}–${newestYear}`
-}
-
-function DashboardPlaceholder({
-  title,
-  description,
-}: {
-  title: string
-  description: string
-}) {
-  return (
-    <section className="dashboard-panel dashboard-panel--placeholder">
-      <h2 className="dashboard-panel__title">{title}</h2>
-      <p className="dashboard-panel__description">{description}</p>
-    </section>
-  )
 }
 
 function KpiCard({
@@ -76,9 +57,9 @@ function KpiCard({
       <p className="kpi-card__label">{label}</p>
       <p className="kpi-card__value">{value}</p>
       {error ? (
-        <p className="kpi-card__error" role="alert">
+        <ErrorMessage className="kpi-card__error">
           {error}
-        </p>
+        </ErrorMessage>
       ) : null}
     </article>
   )
@@ -90,6 +71,8 @@ export function DashboardPage() {
     setFilter,
     resetFilters,
     listQueryParams,
+    chartQueryParams,
+    timelineQueryParams,
     isDebouncingSearch,
   } = usePlanetFilters()
 
@@ -102,7 +85,11 @@ export function DashboardPage() {
   const [displayedPlanets, setDisplayedPlanets] = useState<number | null>(null)
   const [displayedLoading, setDisplayedLoading] = useState(false)
   const [displayedError, setDisplayedError] = useState<string | null>(null)
-  const [, setSelectedPlanetName] = useState<string | null>(null)
+  const [selectedPlanetName, setSelectedPlanetName] = useState<string | null>(
+    null,
+  )
+  // Incremented by "Retry connection" to re-run the connection check.
+  const [connectionAttempt, setConnectionAttempt] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -186,7 +173,7 @@ export function DashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [connectionAttempt])
 
   useEffect(() => {
     if (connection.status !== 'connected' || isDebouncingSearch) {
@@ -230,13 +217,31 @@ export function DashboardPage() {
     }
   }, [connection.status, isDebouncingSearch, listQueryParams])
 
+  const retryConnection = useCallback(() => {
+    setConnection({ status: 'loading' })
+    setKpis({ status: 'idle' })
+    setConnectionAttempt((attempt) => attempt + 1)
+  }, [])
+  const closePlanetDetail = useCallback(() => setSelectedPlanetName(null), [])
+  const selectDiscoveryYear = useCallback(
+    (year: number) => {
+      setFilter('discoveryYearMin', year)
+      setFilter('discoveryYearMax', year)
+    },
+    [setFilter],
+  )
+
   const kpiValues = kpis.status === 'ready' ? kpis.data : null
   const filtersDisabled = connection.status !== 'connected'
 
   return (
     <AppShell
       header={
-        <Header connection={connection} totalPlanets={datasetTotal} />
+        <Header
+          connection={connection}
+          totalPlanets={datasetTotal}
+          onRetry={retryConnection}
+        />
       }
       sidebar={
         <FilterPanel
@@ -248,15 +253,23 @@ export function DashboardPage() {
           disabled={filtersDisabled}
         />
       }
+      drawer={
+        selectedPlanetName != null ? (
+          <PlanetDetailDrawer
+            planetName={selectedPlanetName}
+            onClose={closePlanetDetail}
+          />
+        ) : undefined
+      }
     >
       <section className="dashboard__kpis" aria-label="Key metrics">
         {kpis.status === 'loading' && connection.status === 'connected' ? (
-          <p className="dashboard__kpis-loading">Loading metrics…</p>
+          <LoadingState className="dashboard__kpis-loading">Loading metrics…</LoadingState>
         ) : null}
         {kpis.status === 'error' ? (
-          <p className="dashboard__kpis-error" role="alert">
+          <ErrorMessage className="dashboard__kpis-error">
             {kpis.message}
-          </p>
+          </ErrorMessage>
         ) : null}
         {kpiValues ? (
           <div className="dashboard__kpi-grid">
@@ -290,23 +303,27 @@ export function DashboardPage() {
       </section>
 
       <div className="dashboard__content">
-        <DashboardPlaceholder
-          title="Discovery timeline"
-          description="Stacked bar chart of discoveries by year and method."
+        <DiscoveryTimeline
+          queryParams={timelineQueryParams}
+          disabled={filtersDisabled}
+          onSelectYear={selectDiscoveryYear}
         />
-        <DashboardPlaceholder
-          title="Orbit scatter plot"
-          description="Orbital period versus radius or mass."
+        <OrbitScatterPlot
+          queryParams={chartQueryParams}
+          disabled={filtersDisabled}
+          onSelectPlanet={setSelectedPlanetName}
         />
         <div className="dashboard__split">
-          <DashboardPlaceholder
-            title="Sky map"
-            description="Right ascension and declination distribution."
+          <SkyMap
+            queryParams={chartQueryParams}
+            disabled={filtersDisabled}
+            onSelectPlanet={setSelectedPlanetName}
           />
           <PlanetTable
             queryParams={listQueryParams}
             disabled={filtersDisabled}
             onSelectPlanet={setSelectedPlanetName}
+            selectedPlanetName={selectedPlanetName}
           />
         </div>
       </div>
