@@ -111,6 +111,17 @@ export function FilterPanel({
           onMaxChange={(value) => onFilterChange('orbitalPeriodMax', value)}
         />
 
+        <RangeField
+          label="Distance (pc)"
+          minValue={filters.distanceMin}
+          maxValue={filters.distanceMax}
+          minInputId="filter-distance-min"
+          maxInputId="filter-distance-max"
+          disabled={disabled}
+          onMinChange={(value) => onFilterChange('distanceMin', value)}
+          onMaxChange={(value) => onFilterChange('distanceMax', value)}
+        />
+
         <label className="filter-panel__toggle">
           <input
             type="checkbox"

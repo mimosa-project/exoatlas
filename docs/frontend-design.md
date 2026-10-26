@@ -202,6 +202,8 @@ export type PlanetFilters = {
   massMax: number | null;
   orbitalPeriodMin: number | null;
   orbitalPeriodMax: number | null;
+  distanceMin: number | null;
+  distanceMax: number | null;
   habitableCandidate: boolean;
 };
 ```
@@ -266,10 +268,10 @@ API 関数例:
 
 - `getPlanets(filters, pagination, sort)`
 - `getPlanetDetail(planetName)`
-- `getDiscoveryTimeline(filters)`
+- `getDiscoveryTimeline(params)`
 - `getDiscoveryMethods()`
-- `getOrbitScatter(filters, yAxis)`
-- `getSkyMap(filters)`
+- `getOrbitScatter(params)`（`params.y_axis` で Y 軸を指定）
+- `getSkyMap(params)`
 
 ### 7.4 エラー処理
 
@@ -300,6 +302,7 @@ API 関数例:
 - 半径範囲
 - 質量範囲
 - 公転周期範囲
+- 距離範囲
 - 簡易ハビタブル候補トグル
 - リセットボタン
 

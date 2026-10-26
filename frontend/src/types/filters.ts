@@ -11,6 +11,8 @@ export type PlanetFilters = {
   massMax: number | null
   orbitalPeriodMin: number | null
   orbitalPeriodMax: number | null
+  distanceMin: number | null
+  distanceMax: number | null
   habitableCandidate: boolean
 }
 

@@ -19,6 +19,8 @@ export const DEFAULT_PLANET_FILTERS: PlanetFilters = {
   massMax: null,
   orbitalPeriodMin: null,
   orbitalPeriodMax: null,
+  distanceMin: null,
+  distanceMax: null,
   habitableCandidate: false,
 }
 
@@ -55,6 +57,8 @@ export function toPlanetListQueryParams(
   appendNumericParam(params, 'mass_max', filters.massMax)
   appendNumericParam(params, 'orbital_period_min', filters.orbitalPeriodMin)
   appendNumericParam(params, 'orbital_period_max', filters.orbitalPeriodMax)
+  appendNumericParam(params, 'distance_min', filters.distanceMin)
+  appendNumericParam(params, 'distance_max', filters.distanceMax)
 
   if (filters.habitableCandidate) {
     params.habitable_candidate = true
@@ -84,6 +88,8 @@ export function toChartFilterQueryParams(
 
   appendNumericParam(params, 'disc_year_min', filters.discoveryYearMin)
   appendNumericParam(params, 'disc_year_max', filters.discoveryYearMax)
+  appendNumericParam(params, 'distance_min', filters.distanceMin)
+  appendNumericParam(params, 'distance_max', filters.distanceMax)
 
   return params
 }
@@ -100,6 +106,8 @@ export function hasActiveFilters(filters: PlanetFilters): boolean {
     filters.massMax != null ||
     filters.orbitalPeriodMin != null ||
     filters.orbitalPeriodMax != null ||
+    filters.distanceMin != null ||
+    filters.distanceMax != null ||
     filters.habitableCandidate
   )
 }

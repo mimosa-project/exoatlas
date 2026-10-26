@@ -5,6 +5,7 @@ import { getHealth } from '../api/health'
 import { getPlanets } from '../api/planets'
 import { DiscoveryTimeline } from '../components/charts/DiscoveryTimeline'
 import { OrbitScatterPlot } from '../components/charts/OrbitScatterPlot'
+import { SkyMap } from '../components/charts/SkyMap'
 import { FilterPanel } from '../components/filters/FilterPanel'
 import { AppShell } from '../components/layout/AppShell'
 import {
@@ -48,21 +49,6 @@ function formatDiscoveryYearRange(
   }
 
   return `${oldestYear}–${newestYear}`
-}
-
-function DashboardPlaceholder({
-  title,
-  description,
-}: {
-  title: string
-  description: string
-}) {
-  return (
-    <section className="dashboard-panel dashboard-panel--placeholder">
-      <h2 className="dashboard-panel__title">{title}</h2>
-      <p className="dashboard-panel__description">{description}</p>
-    </section>
-  )
 }
 
 function KpiCard({
@@ -324,9 +310,10 @@ export function DashboardPage() {
           onSelectPlanet={setSelectedPlanetName}
         />
         <div className="dashboard__split">
-          <DashboardPlaceholder
-            title="Sky map"
-            description="Right ascension and declination distribution."
+          <SkyMap
+            queryParams={chartQueryParams}
+            disabled={filtersDisabled}
+            onSelectPlanet={setSelectedPlanetName}
           />
           <PlanetTable
             queryParams={listQueryParams}

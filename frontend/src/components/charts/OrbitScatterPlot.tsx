@@ -1,8 +1,11 @@
 import { useEffect, useId, useMemo, useState } from 'react'
 import { getOrbitScatter } from '../../api/charts'
 import { ApiError } from '../../api/client'
-import { buildOrbitScatterLayout, buildOrbitScatterTraces } from '../../utils/chart'
-import { NOT_AVAILABLE_TEXT } from '../../utils/format'
+import {
+  buildOrbitScatterLayout,
+  buildOrbitScatterTraces,
+  planetNameFromCustomData,
+} from '../../utils/chart'
 import type {
   ChartFilterQueryParams,
   ScatterOrbitRadiusResponse,
@@ -36,21 +39,6 @@ function toErrorMessage(error: unknown): string {
     return error.message
   }
   return 'Request failed'
-}
-
-function toPlanetName(point: PlotlyPointClick): string | null {
-  if (!Array.isArray(point.customdata)) {
-    return null
-  }
-  const [planetName] = point.customdata as unknown[]
-  if (
-    typeof planetName !== 'string' ||
-    planetName.trim().length === 0 ||
-    planetName === NOT_AVAILABLE_TEXT
-  ) {
-    return null
-  }
-  return planetName
 }
 
 export function OrbitScatterPlot({
@@ -118,7 +106,7 @@ export function OrbitScatterPlot({
   )
 
   function handlePointClick(point: PlotlyPointClick) {
-    const planetName = toPlanetName(point)
+    const planetName = planetNameFromCustomData(point.customdata)
     if (planetName != null) {
       onSelectPlanet(planetName)
     }
