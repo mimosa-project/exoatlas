@@ -108,7 +108,9 @@ describe('usePlanetFilters (test coverage AC 6-10)', () => {
     expect(result.current.resetFilters).toBe(before.resetFilters)
   })
 
-  it('creates new param objects when a filter changes (AC 10)', () => {
+  // Superseded by chart-refetch-fixes AC 1-2: only filters that are actually
+  // sent change each param object's reference.
+  it('creates a new listQueryParams but keeps chartQueryParams for a list-only filter (chart-refetch AC 1-2)', () => {
     const { result } = renderHook(() => usePlanetFilters())
     const before = result.current
 
@@ -117,6 +119,120 @@ describe('usePlanetFilters (test coverage AC 6-10)', () => {
     })
 
     expect(result.current.listQueryParams).not.toBe(before.listQueryParams)
+    expect(result.current.chartQueryParams).toBe(before.chartQueryParams)
+  })
+})
+
+describe('usePlanetFilters param references (chart-refetch AC 1-4)', () => {
+  it.each([
+    ['discoveryMethod', 'Transit'],
+    ['discoveryYearMin', 2000],
+    ['discoveryYearMax', 2010],
+    ['distanceMin', 1],
+    ['distanceMax', 100],
+  ] as const)('creates new chart and list params when %s changes (AC 1-2)', (key, value) => {
+    const { result } = renderHook(() => usePlanetFilters())
+    const before = result.current
+
+    act(() => {
+      result.current.setFilter(key, value)
+    })
+
     expect(result.current.chartQueryParams).not.toBe(before.chartQueryParams)
+    expect(result.current.listQueryParams).not.toBe(before.listQueryParams)
+  })
+
+  it.each([
+    ['radiusMin', 1],
+    ['radiusMax', 2],
+    ['massMin', 3],
+    ['massMax', 6],
+    ['orbitalPeriodMin', 4],
+    ['orbitalPeriodMax', 5],
+    ['habitableCandidate', true],
+  ] as const)('keeps chartQueryParams when %s changes (AC 1)', (key, value) => {
+    const { result } = renderHook(() => usePlanetFilters())
+    const before = result.current
+
+    act(() => {
+      result.current.setFilter(key, value)
+    })
+
+    expect(result.current.chartQueryParams).toBe(before.chartQueryParams)
+    expect(result.current.listQueryParams).not.toBe(before.listQueryParams)
+  })
+
+  it('keeps both param references while typing a search, and only list params change after the debounce (AC 1-2)', () => {
+    const { result } = renderHook(() => usePlanetFilters())
+    const before = result.current
+
+    act(() => {
+      result.current.setFilter('q', 'k')
+    })
+    act(() => {
+      result.current.setFilter('q', 'ke')
+    })
+    expect(result.current.isDebouncingSearch).toBe(true)
+    expect(result.current.listQueryParams).toBe(before.listQueryParams)
+    expect(result.current.chartQueryParams).toBe(before.chartQueryParams)
+
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+    expect(result.current.listQueryParams).not.toBe(before.listQueryParams)
+    expect(result.current.listQueryParams.q).toBe('ke')
+    expect(result.current.chartQueryParams).toBe(before.chartQueryParams)
+  })
+
+  it('keeps the param contents unchanged (AC 3)', () => {
+    const { result } = renderHook(() => usePlanetFilters())
+
+    act(() => {
+      result.current.setFilter('discoveryMethod', 'Imaging')
+      result.current.setFilter('radiusMax', 2)
+      result.current.setFilter('distanceMin', 0)
+    })
+
+    expect(result.current.listQueryParams).toEqual({
+      discovery_method: 'Imaging',
+      radius_max: 2,
+      distance_min: 0,
+    })
+    expect(result.current.chartQueryParams).toEqual({
+      discovery_method: 'Imaging',
+      distance_min: 0,
+    })
+  })
+
+  it('keeps both references when a filter is set to its current value (AC 4)', () => {
+    const { result } = renderHook(() => usePlanetFilters())
+    act(() => {
+      result.current.setFilter('discoveryYearMin', 2001)
+      result.current.setFilter('radiusMin', 1)
+    })
+    const before = result.current
+
+    act(() => {
+      result.current.setFilter('discoveryYearMin', 2001)
+      result.current.setFilter('radiusMin', 1)
+      result.current.setFilter('q', '')
+    })
+
+    expect(result.current.listQueryParams).toBe(before.listQueryParams)
+    expect(result.current.chartQueryParams).toBe(before.chartQueryParams)
+  })
+})
+
+describe('usePlanetFilters resetFilters at defaults (chart-refetch AC 4)', () => {
+  it('keeps both references when resetting filters that are already default', () => {
+    const { result } = renderHook(() => usePlanetFilters())
+    const before = result.current
+
+    act(() => {
+      result.current.resetFilters()
+    })
+
+    expect(result.current.listQueryParams).toBe(before.listQueryParams)
+    expect(result.current.chartQueryParams).toBe(before.chartQueryParams)
   })
 })

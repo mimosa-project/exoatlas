@@ -243,19 +243,45 @@ describe('OrbitScatterPlot fetching (AC 10-16)', () => {
     expect(logScale).toBeEnabled()
   })
 
-  it('hides the chart and shows loading while refetching after a Y axis change (AC 12)', async () => {
-    getOrbitScatterMock
-      .mockResolvedValueOnce(response())
-      .mockReturnValueOnce(new Promise(() => {}))
+  // Superseded by chart-refetch-fixes AC 17-18: the previous chart (data and
+  // layout for the previous Y axis) stays mounted while the new axis loads.
+  it('keeps the previous Y axis chart mounted while refetching after a Y axis change (chart-refetch AC 17-18)', async () => {
+    const pending = createDeferred<ScatterOrbitRadiusResponse>()
+    getOrbitScatterMock.mockResolvedValueOnce(response()).mockReturnValueOnce(pending.promise)
+    const user = userEvent.setup()
+
+    render(<OrbitScatterPlot queryParams={EMPTY_PARAMS} onSelectPlanet={vi.fn()} />)
+    const chart = await screen.findByTestId('plotly-chart')
+
+    await user.click(controls().mass)
+
+    expect(screen.getByTestId('plotly-chart')).toBe(chart)
+    expect(screen.getByRole('status')).toHaveTextContent('Loading orbit scatter plot…')
+    expect(lastChartProps().data).toEqual(buildOrbitScatterTraces(ITEMS, 'radius'))
+    expect(lastChartProps().layout).toEqual(buildOrbitScatterLayout('radius', true))
+
+    await act(async () => {
+      pending.resolve(response())
+    })
+
+    expect(screen.getByTestId('plotly-chart')).toBe(chart)
+    expect(lastChartProps().data).toEqual(buildOrbitScatterTraces(ITEMS, 'mass'))
+    expect(lastChartProps().layout).toEqual(buildOrbitScatterLayout('mass', true))
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('updates only the layout when Log scale changes while a Y axis refetch is pending (chart-refetch AC 18)', async () => {
+    getOrbitScatterMock.mockResolvedValueOnce(response()).mockReturnValueOnce(new Promise(() => {}))
     const user = userEvent.setup()
 
     render(<OrbitScatterPlot queryParams={EMPTY_PARAMS} onSelectPlanet={vi.fn()} />)
     await screen.findByTestId('plotly-chart')
-
     await user.click(controls().mass)
+    await user.click(controls().logScale)
 
-    expect(screen.queryByTestId('plotly-chart')).not.toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent('Loading orbit scatter plot…')
+    expect(lastChartProps().data).toEqual(buildOrbitScatterTraces(ITEMS, 'radius'))
+    expect(lastChartProps().layout).toEqual(buildOrbitScatterLayout('radius', false))
+    expect(getOrbitScatterMock).toHaveBeenCalledTimes(2)
   })
 
   it('passes traces and layout for the fetched Y axis and the aria label to PlotlyChart (AC 13)', async () => {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { DiscoveryTimeline } from './DiscoveryTimeline'
 import type { PlotlyPointClick } from './PlotlyChart'
 import { getDiscoveryTimeline } from '../../api/discoveries'
@@ -155,7 +155,8 @@ describe('DiscoveryTimeline states (AC 13-19)', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
-  it('hides the chart and shows loading while refetching (AC 16)', async () => {
+  // Superseded by chart-refetch-fixes AC 17: the previous chart stays mounted.
+  it('keeps the previous chart mounted and shows loading while refetching (chart-refetch AC 17)', async () => {
     getDiscoveryTimelineMock
       .mockResolvedValueOnce(response())
       .mockReturnValueOnce(new Promise(() => {}))
@@ -163,12 +164,50 @@ describe('DiscoveryTimeline states (AC 13-19)', () => {
     const { rerender } = render(
       <DiscoveryTimeline queryParams={{ disc_year_min: 2000 }} onSelectYear={vi.fn()} />,
     )
-    await screen.findByTestId('plotly-chart')
+    const chart = await screen.findByTestId('plotly-chart')
+    const before = lastChartProps()
 
     rerender(<DiscoveryTimeline queryParams={{ disc_year_min: 2001 }} onSelectYear={vi.fn()} />)
 
-    expect(screen.queryByTestId('plotly-chart')).not.toBeInTheDocument()
+    expect(screen.getByTestId('plotly-chart')).toBe(chart)
+    expect(lastChartProps().data).toBe(before.data)
     expect(screen.getByRole('status')).toHaveTextContent('Loading discovery timeline…')
+  })
+
+  it('replaces the previous chart with the new data in the same chart instance (chart-refetch AC 17)', async () => {
+    const newerItems: DiscoveryTimelineItem[] = [{ year: 2020, discovery_method: 'Imaging', count: 9 }]
+    getDiscoveryTimelineMock
+      .mockResolvedValueOnce(response())
+      .mockResolvedValueOnce(response(newerItems))
+
+    const { rerender } = render(
+      <DiscoveryTimeline queryParams={{ disc_year_min: 2000 }} onSelectYear={vi.fn()} />,
+    )
+    const chart = await screen.findByTestId('plotly-chart')
+
+    rerender(<DiscoveryTimeline queryParams={{ disc_year_min: 2001 }} onSelectYear={vi.fn()} />)
+    await waitFor(() => expect(lastChartProps().data).toEqual(buildTimelineTraces(newerItems)))
+
+    expect(screen.getByTestId('plotly-chart')).toBe(chart)
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('uses a separate layout object per component instance (chart-refetch AC 19)', async () => {
+    getDiscoveryTimelineMock.mockResolvedValue(response())
+
+    render(
+      <>
+        <DiscoveryTimeline queryParams={EMPTY_PARAMS} onSelectYear={vi.fn()} />
+        <DiscoveryTimeline queryParams={EMPTY_PARAMS} onSelectYear={vi.fn()} />
+      </>,
+    )
+    await waitFor(() => expect(screen.getAllByTestId('plotly-chart')).toHaveLength(2))
+
+    const layouts = new Set(chartProps.mock.calls.map(([props]) => (props as CapturedChartProps).layout))
+    expect(layouts.size).toBe(2)
+    for (const layout of layouts) {
+      expect(layout).toMatchObject({ uirevision: 'discovery-timeline' })
+    }
   })
 
   it('passes traces from buildTimelineTraces, the expected layout and aria label to PlotlyChart (AC 17)', async () => {

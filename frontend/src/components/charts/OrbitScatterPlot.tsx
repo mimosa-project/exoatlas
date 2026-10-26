@@ -1,5 +1,6 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { getOrbitScatter } from '../../api/charts'
+import { useChartData } from '../../hooks/useChartData'
 import {
   buildOrbitScatterLayout,
   buildOrbitScatterTraces,
@@ -10,10 +11,7 @@ import type {
   ScatterOrbitRadiusResponse,
   ScatterYAxis,
 } from '../../types/api'
-import { toErrorMessage } from '../../utils/error'
-import { EmptyState } from '../ui/EmptyState'
-import { ErrorMessage } from '../ui/ErrorMessage'
-import { LoadingState } from '../ui/LoadingState'
+import { ChartPanelContent } from './ChartPanelContent'
 import { PlotlyChart, type PlotlyPointClick } from './PlotlyChart'
 
 type OrbitScatterPlotProps = {
@@ -22,11 +20,17 @@ type OrbitScatterPlotProps = {
   onSelectPlanet: (planetName: string) => void
 }
 
-type FetchStatus = 'waiting' | 'loading' | 'ready' | 'error'
-
 type ScatterResult = {
   yAxis: ScatterYAxis
   response: ScatterOrbitRadiusResponse
+}
+
+type ScatterParams = ChartFilterQueryParams & { y_axis: ScatterYAxis }
+
+// Tags the response with the Y axis it was fetched for, so the data and layout
+// on screen keep matching while a new axis is loading.
+async function fetchOrbitScatter(params: ScatterParams): Promise<ScatterResult> {
+  return { yAxis: params.y_axis, response: await getOrbitScatter(params) }
 }
 
 const Y_AXIS_OPTIONS: { value: ScatterYAxis; label: string }[] = [
@@ -43,50 +47,15 @@ export function OrbitScatterPlot({
   const titleId = `${idPrefix}-title`
   const [yAxis, setYAxis] = useState<ScatterYAxis>('radius')
   const [logScale, setLogScale] = useState(true)
-  const [status, setStatus] = useState<FetchStatus>(disabled ? 'waiting' : 'loading')
-  const [result, setResult] = useState<ScatterResult | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (disabled) {
-      setStatus('waiting')
-      return
-    }
-
-    let cancelled = false
-    setStatus('loading')
-    setErrorMessage(null)
-
-    async function load(requestedYAxis: ScatterYAxis) {
-      try {
-        const response = await getOrbitScatter({
-          ...queryParams,
-          y_axis: requestedYAxis,
-        })
-
-        if (cancelled) {
-          return
-        }
-
-        setResult({ yAxis: requestedYAxis, response })
-        setStatus('ready')
-      } catch (error) {
-        if (cancelled) {
-          return
-        }
-
-        setResult(null)
-        setErrorMessage(toErrorMessage(error))
-        setStatus('error')
-      }
-    }
-
-    void load(yAxis)
-
-    return () => {
-      cancelled = true
-    }
-  }, [queryParams, yAxis, disabled])
+  const params = useMemo<ScatterParams>(
+    () => ({ ...queryParams, y_axis: yAxis }),
+    [queryParams, yAxis],
+  )
+  const { status, data: result, errorMessage } = useChartData(
+    fetchOrbitScatter,
+    params,
+    disabled,
+  )
 
   const traces = useMemo(
     () => (result ? buildOrbitScatterTraces(result.response.items, result.yAxis) : []),
@@ -138,34 +107,20 @@ export function OrbitScatterPlot({
           </label>
         </div>
       </div>
-      {status === 'waiting' ? (
-        <LoadingState className="chart-panel__status">
-          Waiting for API connection…
-        </LoadingState>
-      ) : null}
-      {status === 'loading' ? (
-        <LoadingState className="chart-panel__status">
-          Loading orbit scatter plot…
-        </LoadingState>
-      ) : null}
-      {status === 'error' ? (
-        <ErrorMessage className="chart-panel__status chart-panel__status--error">
-          {errorMessage}
-        </ErrorMessage>
-      ) : null}
-      {status === 'ready' && traces.length === 0 ? (
-        <EmptyState className="chart-panel__status">
-          No planets match the current filters.
-        </EmptyState>
-      ) : null}
-      {status === 'ready' && traces.length > 0 ? (
+      <ChartPanelContent
+        status={status}
+        errorMessage={errorMessage}
+        loadingText="Loading orbit scatter plot…"
+        emptyText="No planets match the current filters."
+        hasChart={traces.length > 0}
+      >
         <PlotlyChart
           data={traces}
           layout={layout}
           ariaLabel="Orbit scatter plot chart"
           onPointClick={handlePointClick}
         />
-      ) : null}
+      </ChartPanelContent>
     </section>
   )
 }

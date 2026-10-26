@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { SkyMap } from './SkyMap'
 import type { PlotlyPointClick } from './PlotlyChart'
 import { getSkyMap } from '../../api/charts'
@@ -191,7 +191,8 @@ describe('SkyMap states (sky map spec AC 14-22)', () => {
     expect(screen.queryByText('No planets match the current filters.')).not.toBeInTheDocument()
   })
 
-  it('hides the chart and shows loading while refetching (AC 17)', async () => {
+  // Superseded by chart-refetch-fixes AC 17: the previous chart stays mounted.
+  it('keeps the previous chart mounted and shows loading while refetching (chart-refetch AC 17)', async () => {
     getSkyMapMock
       .mockResolvedValueOnce(response())
       .mockReturnValueOnce(new Promise(() => {}))
@@ -199,12 +200,49 @@ describe('SkyMap states (sky map spec AC 14-22)', () => {
     const { rerender } = render(
       <SkyMap queryParams={{ disc_year_min: 2000 }} onSelectPlanet={vi.fn()} />,
     )
-    await screen.findByTestId('plotly-chart')
+    const chart = await screen.findByTestId('plotly-chart')
+    const before = lastChartProps()
 
     rerender(<SkyMap queryParams={{ disc_year_min: 2001 }} onSelectPlanet={vi.fn()} />)
 
-    expect(screen.queryByTestId('plotly-chart')).not.toBeInTheDocument()
+    expect(screen.getByTestId('plotly-chart')).toBe(chart)
+    expect(lastChartProps().data).toBe(before.data)
     expect(screen.getByRole('status')).toHaveTextContent('Loading sky map…')
+  })
+
+  it('shows only loading when refetching after an empty result (chart-refetch AC 17)', async () => {
+    getSkyMapMock
+      .mockResolvedValueOnce(response([]))
+      .mockReturnValueOnce(new Promise(() => {}))
+
+    const { rerender } = render(
+      <SkyMap queryParams={{ disc_year_min: 2000 }} onSelectPlanet={vi.fn()} />,
+    )
+    await screen.findByText('No planets match the current filters.')
+
+    rerender(<SkyMap queryParams={{ disc_year_min: 2001 }} onSelectPlanet={vi.fn()} />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading sky map…')
+    expect(screen.queryByTestId('plotly-chart')).not.toBeInTheDocument()
+    expect(screen.queryByText('No planets match the current filters.')).not.toBeInTheDocument()
+  })
+
+  it('uses a separate layout object per component instance with uirevision (chart-refetch AC 19-20)', async () => {
+    getSkyMapMock.mockResolvedValue(response())
+
+    render(
+      <>
+        <SkyMap queryParams={EMPTY_PARAMS} onSelectPlanet={vi.fn()} />
+        <SkyMap queryParams={EMPTY_PARAMS} onSelectPlanet={vi.fn()} />
+      </>,
+    )
+    await waitFor(() => expect(screen.getAllByTestId('plotly-chart')).toHaveLength(2))
+
+    const layouts = new Set(chartProps.mock.calls.map(([props]) => (props as CapturedChartProps).layout))
+    expect(layouts.size).toBe(2)
+    for (const layout of layouts) {
+      expect(layout).toMatchObject({ uirevision: 'sky-map' })
+    }
   })
 
   it('passes traces, layout and aria label to PlotlyChart (AC 18)', async () => {

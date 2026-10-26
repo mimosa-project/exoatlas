@@ -105,6 +105,7 @@ export function buildTimelineTraces(items: DiscoveryTimelineItem[]): TimelineTra
       return {
         type: 'bar',
         name,
+        uid: name,
         x: years,
         y: years.map((year) => group.counts.get(year) ?? 0),
         customdata: years,
@@ -186,6 +187,7 @@ export function buildOrbitScatterTraces(
     type: 'scatter',
     mode: 'markers',
     name: group.name,
+    uid: group.name,
     x: group.x,
     y: group.y,
     customdata: group.customdata,
@@ -220,6 +222,17 @@ export function withChartTheme(layout: Partial<Layout>): Partial<Layout> {
   }
 }
 
+export function buildTimelineLayout(): Partial<Layout> {
+  return withChartTheme({
+    barmode: 'stack',
+    showlegend: true,
+    // Keeps legend toggles and zoom across refetches (Plotly.react updates).
+    uirevision: 'discovery-timeline',
+    xaxis: { title: { text: 'Discovery year' }, tickformat: 'd' },
+    yaxis: { title: { text: 'Planets' } },
+  })
+}
+
 export function buildOrbitScatterLayout(
   yAxis: ScatterYAxis,
   logScale: boolean,
@@ -228,6 +241,8 @@ export function buildOrbitScatterLayout(
   return withChartTheme({
     showlegend: true,
     hovermode: 'closest',
+    // Zoom ranges differ between axis types, so UI state resets when they change.
+    uirevision: `orbit-scatter-${yAxis}-${type === 'log' ? 'log' : 'linear'}`,
     xaxis: { title: { text: 'Orbital period (days)' }, type },
     yaxis: { title: { text: SCATTER_Y_AXIS_TITLES[yAxis] }, type },
   })
@@ -262,6 +277,7 @@ export function buildSkyMapTraces(items: SkyMapItem[]): SkyMapTrace[] {
     type: 'scatter',
     mode: 'markers',
     name: group.name,
+    uid: group.name,
     x: group.x,
     y: group.y,
     customdata: group.customdata,
@@ -284,6 +300,7 @@ export function buildSkyMapLayout(): Partial<Layout> {
   return withChartTheme({
     showlegend: true,
     hovermode: 'closest',
+    uirevision: 'sky-map',
     // Right ascension increases to the left, as on a sky chart.
     xaxis: { title: { text: 'Right ascension (°)' }, range: [360, 0] },
     yaxis: { title: { text: 'Declination (°)' }, range: [-90, 90] },

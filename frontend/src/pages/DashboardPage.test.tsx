@@ -483,3 +483,53 @@ describe('DashboardPage chart and table interactions (test coverage AC 26-30)', 
     expect(tableRow('11 Com b')).not.toHaveAttribute('aria-current')
   })
 })
+
+describe('DashboardPage chart refetch scope (chart-refetch AC 23-24)', () => {
+  function chartCallCounts() {
+    return [getDiscoveryTimelineMock, getOrbitScatterMock, getSkyMapMock].map(
+      (mock) => mock.mock.calls.length,
+    )
+  }
+
+  it('does not refetch charts while typing a search or after its debounce (AC 23)', async () => {
+    setUpConnectedApi()
+    await renderConnected()
+    const before = chartCallCounts()
+    const tableCallsBefore = getPlanetsMock.mock.calls.filter(([params]) => params?.limit === 50).length
+
+    vi.useFakeTimers()
+    fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'k' } })
+    fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'ke' } })
+    fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'kep' } })
+
+    // AC 24: no list refetch while the search is debouncing.
+    expect(getPlanetsMock.mock.calls.filter(([params]) => params?.limit === 50)).toHaveLength(
+      tableCallsBefore,
+    )
+    expect(chartCallCounts()).toEqual(before)
+
+    await act(async () => {
+      vi.advanceTimersByTime(300)
+    })
+    vi.useRealTimers()
+
+    await waitFor(() => tableCallWith({ q: 'kep' }))
+    expect(chartCallCounts()).toEqual(before)
+  })
+
+  it('does not refetch charts for a radius change but does for a method change (AC 23)', async () => {
+    setUpConnectedApi()
+    const user = userEvent.setup()
+    await renderConnected()
+    const before = chartCallCounts()
+
+    fireEvent.change(rangeInputs('Radius (Earth radii)').min, { target: { value: '1' } })
+    await waitFor(() => tableCallWith({ radius_min: 1 }))
+    expect(chartCallCounts()).toEqual(before)
+
+    await user.selectOptions(screen.getByLabelText('Discovery method'), 'Transit')
+    await waitFor(() =>
+      expect(chartCallCounts()).toEqual(before.map((count) => count + 1)),
+    )
+  })
+})
