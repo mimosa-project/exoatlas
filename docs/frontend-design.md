@@ -447,12 +447,12 @@ API 関数例:
 5. `AppShell` と `DashboardPage` を作る。　-> 済
 6. `FilterPanel` とフィルター状態管理を作る。　-> 済
 7. `PlanetTable` を実装する。　-> 済
-8. `PlanetDetailDrawer` を実装する。
-9. `DiscoveryTimeline` を実装する。
-10. `OrbitScatterPlot` を実装する。
-11. `SkyMap` を実装する。
-12. ローディング、空状態、エラー状態を整える。
-13. Vitest で主要ユーティリティとコンポーネントを検証する。
+8. `PlanetDetailDrawer` を実装する。　-> 済
+9. `DiscoveryTimeline` を実装する。　-> 済
+10. `OrbitScatterPlot` を実装する。　-> 済
+11. `SkyMap` を実装する。　-> 済
+12. ローディング、空状態、エラー状態を整える。　-> 済
+13. Vitest で主要ユーティリティとコンポーネントを検証する。　-> 済
 
 ## 15. バックエンドとの契約
 
