@@ -29,8 +29,11 @@ type ScatterParams = ChartFilterQueryParams & { y_axis: ScatterYAxis }
 
 // Tags the response with the Y axis it was fetched for, so the data and layout
 // on screen keep matching while a new axis is loading.
-async function fetchOrbitScatter(params: ScatterParams): Promise<ScatterResult> {
-  return { yAxis: params.y_axis, response: await getOrbitScatter(params) }
+async function fetchOrbitScatter(
+  params: ScatterParams,
+  signal: AbortSignal,
+): Promise<ScatterResult> {
+  return { yAxis: params.y_axis, response: await getOrbitScatter(params, { signal }) }
 }
 
 const Y_AXIS_OPTIONS: { value: ScatterYAxis; label: string }[] = [

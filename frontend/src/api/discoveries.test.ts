@@ -49,3 +49,28 @@ describe('getDiscoveryTimeline (AC 1)', () => {
     await expect(getDiscoveryTimeline({})).rejects.toBe(error)
   })
 })
+
+describe('getDiscoveryTimeline passes the abort signal (review2-fixes AC 15)', () => {
+  it('passes options.signal to apiGetJson', async () => {
+    apiGetJsonMock.mockResolvedValue({ items: [] })
+    const controller = new AbortController()
+
+    await getDiscoveryTimeline({ group_by_method: true }, { signal: controller.signal })
+
+    expect(apiGetJsonMock).toHaveBeenCalledWith(
+      '/api/discoveries/timeline?group_by_method=true',
+      { signal: controller.signal },
+    )
+  })
+})
+
+describe('getDiscoveryTimeline without a signal (review2-fixes AC 15)', () => {
+  it('calls apiGetJson with no second argument when options has no signal', async () => {
+    apiGetJsonMock.mockResolvedValue({ items: [] })
+
+    await getDiscoveryTimeline({}, {})
+
+    expect(apiGetJsonMock).toHaveBeenCalledWith('/api/discoveries/timeline')
+    expect(apiGetJsonMock.mock.calls[0]).toHaveLength(1)
+  })
+})

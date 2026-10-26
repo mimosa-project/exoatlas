@@ -16,9 +16,13 @@ type SkyMapProps = {
   onSelectPlanet: (planetName: string) => void
 }
 
+function fetchSkyMap(params: ChartFilterQueryParams, signal: AbortSignal) {
+  return getSkyMap(params, { signal })
+}
+
 export function SkyMap({ queryParams, disabled = false, onSelectPlanet }: SkyMapProps) {
   const titleId = useId()
-  const { status, data, errorMessage } = useChartData(getSkyMap, queryParams, disabled)
+  const { status, data, errorMessage } = useChartData(fetchSkyMap, queryParams, disabled)
 
   const traces = useMemo(() => (data ? buildSkyMapTraces(data.items) : []), [data])
   // Built per instance: Plotly writes UI state (zoom) into the layout object.

@@ -15,7 +15,7 @@ function createDeferred<T>() {
   return { promise, resolve, reject }
 }
 
-function setup(fetcher: (params: Params) => Promise<string>, params: Params, disabled = false) {
+function setup(fetcher: (params: Params, signal: AbortSignal) => Promise<string>, params: Params, disabled = false) {
   return renderHook(
     ({ params: currentParams, disabled: currentDisabled }) =>
       useChartData(fetcher, currentParams, currentDisabled),
@@ -25,7 +25,7 @@ function setup(fetcher: (params: Params) => Promise<string>, params: Params, dis
 
 describe('useChartData (chart-refetch AC 5-10)', () => {
   it('returns waiting and does not fetch while disabled (AC 5)', () => {
-    const fetcher = vi.fn<(params: Params) => Promise<string>>()
+    const fetcher = vi.fn<(params: Params, signal: AbortSignal) => Promise<string>>()
 
     const { result } = setup(fetcher, {}, true)
 
@@ -35,13 +35,13 @@ describe('useChartData (chart-refetch AC 5-10)', () => {
 
   it('fetches once when enabled and returns loading then ready (AC 6-8)', async () => {
     const pending = createDeferred<string>()
-    const fetcher = vi.fn<(params: Params) => Promise<string>>().mockReturnValue(pending.promise)
+    const fetcher = vi.fn<(params: Params, signal: AbortSignal) => Promise<string>>().mockReturnValue(pending.promise)
     const params = { year: 2000 }
 
     const { result } = setup(fetcher, params)
 
     expect(fetcher).toHaveBeenCalledTimes(1)
-    expect(fetcher).toHaveBeenCalledWith(params)
+    expect(fetcher).toHaveBeenCalledWith(params, expect.any(AbortSignal))
     expect(result.current).toEqual({ status: 'loading', data: null, errorMessage: null })
 
     await act(async () => {
@@ -52,7 +52,7 @@ describe('useChartData (chart-refetch AC 5-10)', () => {
   })
 
   it('starts fetching when disabled changes to false (AC 6)', async () => {
-    const fetcher = vi.fn<(params: Params) => Promise<string>>().mockResolvedValue('data')
+    const fetcher = vi.fn<(params: Params, signal: AbortSignal) => Promise<string>>().mockResolvedValue('data')
     const params = {}
 
     const { result, rerender } = setup(fetcher, params, true)
@@ -64,7 +64,7 @@ describe('useChartData (chart-refetch AC 5-10)', () => {
   })
 
   it('refetches only when the params reference changes (AC 6)', async () => {
-    const fetcher = vi.fn<(params: Params) => Promise<string>>().mockResolvedValue('data')
+    const fetcher = vi.fn<(params: Params, signal: AbortSignal) => Promise<string>>().mockResolvedValue('data')
     const params = { year: 1 }
 
     const { rerender } = setup(fetcher, params)
@@ -80,7 +80,7 @@ describe('useChartData (chart-refetch AC 5-10)', () => {
   it('keeps the previous data while refetching (AC 7)', async () => {
     const second = createDeferred<string>()
     const fetcher = vi
-      .fn<(params: Params) => Promise<string>>()
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
       .mockResolvedValueOnce('first')
       .mockReturnValueOnce(second.promise)
 
@@ -104,7 +104,7 @@ describe('useChartData (chart-refetch AC 5-10)', () => {
     ['a non-Error value', 'boom', 'Request failed'],
   ])('returns error with data null for %s (AC 9)', async (_label, error, message) => {
     const fetcher = vi
-      .fn<(params: Params) => Promise<string>>()
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
       .mockResolvedValueOnce('first')
       .mockRejectedValueOnce(error)
 
@@ -118,7 +118,7 @@ describe('useChartData (chart-refetch AC 5-10)', () => {
 
   it('shows loading with null data when refetching after an error (AC 7)', async () => {
     const fetcher = vi
-      .fn<(params: Params) => Promise<string>>()
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
       .mockRejectedValueOnce(new Error('fail'))
       .mockReturnValueOnce(new Promise(() => {}))
 
@@ -134,7 +134,7 @@ describe('useChartData (chart-refetch AC 5-10)', () => {
     const second = createDeferred<string>()
     const third = createDeferred<string>()
     const fetcher = vi
-      .fn<(params: Params) => Promise<string>>()
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
       .mockReturnValueOnce(first.promise)
       .mockReturnValueOnce(second.promise)
       .mockReturnValueOnce(third.promise)
@@ -157,7 +157,7 @@ describe('useChartData (chart-refetch AC 5-10)', () => {
   it('switches to waiting, drops data and ignores an in-flight result when disabled again (AC 5)', async () => {
     const second = createDeferred<string>()
     const fetcher = vi
-      .fn<(params: Params) => Promise<string>>()
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
       .mockResolvedValueOnce('first')
       .mockReturnValueOnce(second.promise)
     const { result, rerender } = setup(fetcher, { year: 1 })
@@ -174,8 +174,8 @@ describe('useChartData (chart-refetch AC 5-10)', () => {
   })
 
   it('does not refetch when only the fetcher reference changes (AC 6)', async () => {
-    const fetcherA = vi.fn<(params: Params) => Promise<string>>().mockResolvedValue('a')
-    const fetcherB = vi.fn<(params: Params) => Promise<string>>().mockResolvedValue('b')
+    const fetcherA = vi.fn<(params: Params, signal: AbortSignal) => Promise<string>>().mockResolvedValue('a')
+    const fetcherB = vi.fn<(params: Params, signal: AbortSignal) => Promise<string>>().mockResolvedValue('b')
     const params = {}
     const { rerender } = renderHook(
       ({ fetcher }) => useChartData(fetcher, params, false),
@@ -194,7 +194,7 @@ describe('useChartData (chart-refetch AC 5-10)', () => {
 describe('useChartData after re-enabling (chart-refetch AC 5)', () => {
   it('starts the next fetch with null data instead of the data from before the waiting period', async () => {
     const fetcher = vi
-      .fn<(params: Params) => Promise<string>>()
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
       .mockResolvedValueOnce('first')
       .mockReturnValueOnce(new Promise(() => {}))
     const params = { year: 1 }
@@ -206,6 +206,143 @@ describe('useChartData after re-enabling (chart-refetch AC 5)', () => {
     rerender({ params, disabled: false })
 
     expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(result.current).toEqual({ status: 'loading', data: null, errorMessage: null })
+  })
+})
+
+describe('useChartData aborts superseded requests (review2-fixes AC 11-14)', () => {
+  function signalOf(fetcher: { mock: { calls: unknown[][] } }, index: number): AbortSignal {
+    return fetcher.mock.calls[index][1] as AbortSignal
+  }
+
+  it('passes a fresh, not yet aborted signal to every fetch (AC 11)', async () => {
+    const fetcher = vi
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
+      .mockReturnValue(new Promise(() => {}))
+    const { rerender } = setup(fetcher, { year: 1 })
+    rerender({ params: { year: 2 }, disabled: false })
+
+    expect(signalOf(fetcher, 0)).toBeInstanceOf(AbortSignal)
+    expect(signalOf(fetcher, 1)).not.toBe(signalOf(fetcher, 0))
+    expect(signalOf(fetcher, 1).aborted).toBe(false)
+  })
+
+  it('aborts the previous request when params change (AC 12)', () => {
+    const fetcher = vi
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
+      .mockReturnValue(new Promise(() => {}))
+    const { rerender } = setup(fetcher, { year: 1 })
+
+    rerender({ params: { year: 2 }, disabled: false })
+
+    expect(signalOf(fetcher, 0).aborted).toBe(true)
+    expect(signalOf(fetcher, 1).aborted).toBe(false)
+  })
+
+  it('aborts the in-flight request when disabled becomes true (AC 12)', () => {
+    const fetcher = vi
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
+      .mockReturnValue(new Promise(() => {}))
+    const params = {}
+    const { rerender } = setup(fetcher, params)
+
+    rerender({ params, disabled: true })
+
+    expect(signalOf(fetcher, 0).aborted).toBe(true)
+  })
+
+  it('aborts the in-flight request on unmount (AC 12)', () => {
+    const fetcher = vi
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
+      .mockReturnValue(new Promise(() => {}))
+    const { unmount } = setup(fetcher, {})
+
+    unmount()
+
+    expect(signalOf(fetcher, 0).aborted).toBe(true)
+  })
+
+  it('ignores the rejection caused by aborting a superseded request (AC 13)', async () => {
+    const second = createDeferred<string>()
+    const fetcher = vi
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
+      .mockImplementationOnce(
+        (_params, signal) =>
+          new Promise((_resolve, reject) => {
+            signal.addEventListener('abort', () =>
+              reject(new DOMException('The operation was aborted.', 'AbortError')),
+            )
+          }),
+      )
+      .mockReturnValueOnce(second.promise)
+    const { result, rerender } = setup(fetcher, { year: 1 })
+
+    rerender({ params: { year: 2 }, disabled: false })
+    await act(async () => {})
+    expect(result.current).toEqual({ status: 'loading', data: null, errorMessage: null })
+
+    await act(async () => {
+      second.resolve('latest')
+    })
+    expect(result.current).toEqual({ status: 'ready', data: 'latest', errorMessage: null })
+  })
+
+  it('keeps a successful result when its signal is aborted by the next fetch (AC 14)', async () => {
+    const fetcher = vi
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
+      .mockResolvedValueOnce('done')
+      .mockReturnValueOnce(new Promise(() => {}))
+    const { result, rerender } = setup(fetcher, { year: 1 })
+    await act(async () => {})
+
+    rerender({ params: { year: 2 }, disabled: false })
+    await act(async () => {})
+
+    expect(signalOf(fetcher, 0).aborted).toBe(true)
+    expect(result.current).toEqual({ status: 'loading', data: 'done', errorMessage: null })
+  })
+
+  it('does not report a new error when a failed fetch is aborted by the next fetch (AC 14)', async () => {
+    const fetcher = vi
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
+      .mockRejectedValueOnce(new Error('first failure'))
+      .mockReturnValueOnce(new Promise(() => {}))
+    const { result, rerender } = setup(fetcher, { year: 1 })
+    await act(async () => {})
+    expect(result.current.status).toBe('error')
+
+    rerender({ params: { year: 2 }, disabled: false })
+    await act(async () => {})
+
+    expect(signalOf(fetcher, 0).aborted).toBe(true)
+    expect(result.current).toEqual({ status: 'loading', data: null, errorMessage: null })
+  })
+
+  it('ignores an ApiError raised by aborting a superseded request (AC 13)', async () => {
+    const second = createDeferred<string>()
+    const fetcher = vi
+      .fn<(params: Params, signal: AbortSignal) => Promise<string>>()
+      .mockImplementationOnce(
+        (_params, signal) =>
+          new Promise((_resolve, reject) => {
+            signal.addEventListener('abort', () =>
+              reject(
+                new ApiError({
+                  message: 'The operation was aborted.',
+                  status: 0,
+                  statusText: 'Network Error',
+                  url: '/api/sky-map',
+                }),
+              ),
+            )
+          }),
+      )
+      .mockReturnValueOnce(second.promise)
+    const { result, rerender } = setup(fetcher, { year: 1 })
+
+    rerender({ params: { year: 2 }, disabled: false })
+    await act(async () => {})
+
     expect(result.current).toEqual({ status: 'loading', data: null, errorMessage: null })
   })
 })

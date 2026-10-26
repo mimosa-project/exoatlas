@@ -7,12 +7,54 @@ import {
 } from '../utils/query'
 import { useDebouncedValue } from './useDebouncedValue'
 
+type NumericFilters = Pick<
+  PlanetFilters,
+  | 'discoveryYearMin'
+  | 'discoveryYearMax'
+  | 'radiusMin'
+  | 'radiusMax'
+  | 'massMin'
+  | 'massMax'
+  | 'orbitalPeriodMin'
+  | 'orbitalPeriodMax'
+  | 'distanceMin'
+  | 'distanceMax'
+>
+
 export function usePlanetFilters() {
   const [filters, setFilters] = useState<PlanetFilters>(DEFAULT_PLANET_FILTERS)
   const debouncedQuery = useDebouncedValue(filters.q, 300)
 
+  const { discoveryMethod, habitableCandidate } = filters
+  const numericFilters = useMemo<NumericFilters>(
+    () => ({
+      discoveryYearMin: filters.discoveryYearMin,
+      discoveryYearMax: filters.discoveryYearMax,
+      radiusMin: filters.radiusMin,
+      radiusMax: filters.radiusMax,
+      massMin: filters.massMin,
+      massMax: filters.massMax,
+      orbitalPeriodMin: filters.orbitalPeriodMin,
+      orbitalPeriodMax: filters.orbitalPeriodMax,
+      distanceMin: filters.distanceMin,
+      distanceMax: filters.distanceMax,
+    }),
+    [
+      filters.discoveryYearMin,
+      filters.discoveryYearMax,
+      filters.radiusMin,
+      filters.radiusMax,
+      filters.massMin,
+      filters.massMax,
+      filters.orbitalPeriodMin,
+      filters.orbitalPeriodMax,
+      filters.distanceMin,
+      filters.distanceMax,
+    ],
+  )
+  // Range inputs are typed digit by digit, so like the search box they are
+  // applied 300ms after the last change to any of them.
   const {
-    discoveryMethod,
     discoveryYearMin,
     discoveryYearMax,
     radiusMin,
@@ -23,10 +65,9 @@ export function usePlanetFilters() {
     orbitalPeriodMax,
     distanceMin,
     distanceMax,
-    habitableCandidate,
-  } = filters
+  } = useDebouncedValue(numericFilters, 300)
 
-  // Depend on individual values (not the `filters` object) so the params keep
+  // Depend on individual applied values (not objects) so the params keep
   // their reference unless something that is actually sent changes.
   const debouncedFilters = useMemo<PlanetFilters>(
     () => ({

@@ -158,12 +158,15 @@ describe('SkyMap states (sky map spec AC 14-22)', () => {
     await screen.findByTestId('plotly-chart')
 
     expect(getSkyMapMock).toHaveBeenCalledTimes(1)
-    expect(getSkyMapMock).toHaveBeenCalledWith({
-      discovery_method: 'Transit',
-      disc_year_min: 2000,
-      distance_min: 0,
-      distance_max: 500,
-    })
+    expect(getSkyMapMock).toHaveBeenCalledWith(
+      {
+        discovery_method: 'Transit',
+        disc_year_min: 2000,
+        distance_min: 0,
+        distance_max: 500,
+      },
+      { signal: expect.any(AbortSignal) },
+    )
   })
 
   it('refetches whenever the queryParams reference changes (AC 16)', async () => {

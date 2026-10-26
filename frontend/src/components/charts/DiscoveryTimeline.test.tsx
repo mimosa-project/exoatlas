@@ -123,12 +123,15 @@ describe('DiscoveryTimeline states (AC 13-19)', () => {
     await screen.findByTestId('plotly-chart')
 
     expect(getDiscoveryTimelineMock).toHaveBeenCalledTimes(1)
-    expect(getDiscoveryTimelineMock).toHaveBeenCalledWith({
-      discovery_method: 'Transit',
-      disc_year_min: 2000,
-      disc_year_max: 2010,
-      group_by_method: true,
-    })
+    expect(getDiscoveryTimelineMock).toHaveBeenCalledWith(
+      {
+        discovery_method: 'Transit',
+        disc_year_min: 2000,
+        disc_year_max: 2010,
+        group_by_method: true,
+      },
+      { signal: expect.any(AbortSignal) },
+    )
   })
 
   it('refetches whenever the queryParams reference changes, even with equal contents (AC 15)', async () => {

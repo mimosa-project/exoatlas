@@ -82,3 +82,39 @@ describe('getSkyMap (sky map spec AC 8)', () => {
     await expect(getSkyMap({})).rejects.toBe(error)
   })
 })
+
+describe('chart API functions pass the abort signal (review2-fixes AC 15)', () => {
+  it('passes options.signal to apiGetJson for getOrbitScatter', async () => {
+    apiGetJsonMock.mockResolvedValue({ items: [] })
+    const controller = new AbortController()
+
+    await getOrbitScatter({ y_axis: 'mass' }, { signal: controller.signal })
+
+    expect(apiGetJsonMock).toHaveBeenCalledWith('/api/scatter/orbit-radius?y_axis=mass', {
+      signal: controller.signal,
+    })
+  })
+
+  it('passes options.signal to apiGetJson for getSkyMap', async () => {
+    apiGetJsonMock.mockResolvedValue({ items: [] })
+    const controller = new AbortController()
+
+    await getSkyMap({}, { signal: controller.signal })
+
+    expect(apiGetJsonMock).toHaveBeenCalledWith('/api/sky-map', { signal: controller.signal })
+  })
+})
+
+describe('chart API functions without a signal (review2-fixes AC 15)', () => {
+  it.each([
+    ['getOrbitScatter', () => getOrbitScatter({}, {}), '/api/scatter/orbit-radius'],
+    ['getSkyMap', () => getSkyMap({}, {}), '/api/sky-map'],
+  ])('%s calls apiGetJson with no second argument when options has no signal', async (_name, call, path) => {
+    apiGetJsonMock.mockResolvedValue({ items: [] })
+
+    await call()
+
+    expect(apiGetJsonMock).toHaveBeenCalledWith(path)
+    expect(apiGetJsonMock.mock.calls[0]).toHaveLength(1)
+  })
+})

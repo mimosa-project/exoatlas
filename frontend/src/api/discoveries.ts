@@ -1,4 +1,9 @@
-import { apiGetJson, buildQueryString } from './client'
+import {
+  apiGetJson,
+  buildQueryString,
+  requestInit,
+  type RequestOptions,
+} from './client'
 import type {
   DiscoveryMethodsQueryParams,
   DiscoveryMethodsResponse,
@@ -16,8 +21,10 @@ export async function getDiscoveryMethods(
 
 export async function getDiscoveryTimeline(
   params: DiscoveryTimelineQueryParams = {},
+  options?: RequestOptions,
 ): Promise<DiscoveryTimelineResponse> {
   return apiGetJson<DiscoveryTimelineResponse>(
     `/api/discoveries/timeline${buildQueryString(params)}`,
+    ...requestInit(options),
   )
 }

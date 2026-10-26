@@ -2,7 +2,10 @@ import { useId, useMemo, useState } from 'react'
 import { getDiscoveryTimeline } from '../../api/discoveries'
 import { useChartData } from '../../hooks/useChartData'
 import { buildTimelineLayout, buildTimelineTraces } from '../../utils/chart'
-import type { ChartFilterQueryParams } from '../../types/api'
+import type {
+  ChartFilterQueryParams,
+  DiscoveryTimelineQueryParams,
+} from '../../types/api'
 import { ChartPanelContent } from './ChartPanelContent'
 import { PlotlyChart, type PlotlyPointClick } from './PlotlyChart'
 
@@ -24,6 +27,10 @@ function toYear(point: PlotlyPointClick): number | null {
   return null
 }
 
+function fetchTimeline(params: DiscoveryTimelineQueryParams, signal: AbortSignal) {
+  return getDiscoveryTimeline(params, { signal })
+}
+
 export function DiscoveryTimeline({
   queryParams,
   disabled = false,
@@ -34,7 +41,7 @@ export function DiscoveryTimeline({
     () => ({ ...queryParams, group_by_method: true }),
     [queryParams],
   )
-  const { status, data, errorMessage } = useChartData(getDiscoveryTimeline, params, disabled)
+  const { status, data, errorMessage } = useChartData(fetchTimeline, params, disabled)
 
   const traces = useMemo(() => (data ? buildTimelineTraces(data.items) : []), [data])
   // Built per instance: Plotly writes UI state (zoom) into the layout object.

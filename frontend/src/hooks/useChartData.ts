@@ -17,8 +17,9 @@ const WAITING_STATE: ChartDataState<never> = {
 
 // Fetches chart data whenever `params` changes. While a refetch is in flight
 // the previous successful data is kept so the chart can stay on screen.
+// Superseded requests are aborted through the signal passed to `fetcher`.
 export function useChartData<P, R>(
-  fetcher: (params: P) => Promise<R>,
+  fetcher: (params: P, signal: AbortSignal) => Promise<R>,
   params: P,
   disabled: boolean,
 ): ChartDataState<R> {
@@ -38,13 +39,14 @@ export function useChartData<P, R>(
     }
 
     let cancelled = false
+    const controller = new AbortController()
     setState((previous) => ({
       status: 'loading',
       data: previous.status === 'error' ? null : previous.data,
       errorMessage: null,
     }))
 
-    fetcherRef.current(params).then(
+    fetcherRef.current(params, controller.signal).then(
       (data) => {
         if (!cancelled) {
           setState({ status: 'ready', data, errorMessage: null })
@@ -59,6 +61,7 @@ export function useChartData<P, R>(
 
     return () => {
       cancelled = true
+      controller.abort()
     }
   }, [params, disabled])
 

@@ -170,11 +170,14 @@ describe('OrbitScatterPlot fetching (AC 10-16)', () => {
     await screen.findByTestId('plotly-chart')
 
     expect(getOrbitScatterMock).toHaveBeenCalledTimes(1)
-    expect(getOrbitScatterMock).toHaveBeenCalledWith({
-      discovery_method: 'Transit',
-      disc_year_min: 2000,
-      y_axis: 'radius',
-    })
+    expect(getOrbitScatterMock).toHaveBeenCalledWith(
+      {
+        discovery_method: 'Transit',
+        disc_year_min: 2000,
+        y_axis: 'radius',
+      },
+      { signal: expect.any(AbortSignal) },
+    )
   })
 
   it('refetches with y_axis: "mass" when Mass is selected (AC 10)', async () => {
@@ -188,10 +191,13 @@ describe('OrbitScatterPlot fetching (AC 10-16)', () => {
 
     expect(controls().mass).toBeChecked()
     expect(getOrbitScatterMock).toHaveBeenCalledTimes(2)
-    expect(getOrbitScatterMock).toHaveBeenLastCalledWith({
-      disc_year_min: 2000,
-      y_axis: 'mass',
-    })
+    expect(getOrbitScatterMock).toHaveBeenLastCalledWith(
+      {
+        disc_year_min: 2000,
+        y_axis: 'mass',
+      },
+      { signal: expect.any(AbortSignal) },
+    )
     await screen.findByTestId('plotly-chart')
   })
 

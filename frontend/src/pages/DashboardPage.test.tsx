@@ -243,9 +243,11 @@ describe('DashboardPage initial load (test coverage AC 19-20)', () => {
 
     expect(getDiscoveryTimelineMock).toHaveBeenCalledWith(
       expect.objectContaining({ group_by_method: true }),
+      { signal: expect.any(AbortSignal) },
     )
     expect(getOrbitScatterMock).toHaveBeenCalledWith(
       expect.objectContaining({ y_axis: 'radius' }),
+      { signal: expect.any(AbortSignal) },
     )
     expect(getSkyMapMock).toHaveBeenCalled()
     tableCallWith({ offset: 0 })
@@ -352,12 +354,15 @@ describe('DashboardPage filter changes (test coverage AC 23-25)', () => {
     expect(getPlanetsMock).toHaveBeenCalledWith({ discovery_method: 'Transit', limit: 1 })
     expect(getDiscoveryTimelineMock).toHaveBeenCalledWith(
       expect.objectContaining({ discovery_method: 'Transit', group_by_method: true }),
+      { signal: expect.any(AbortSignal) },
     )
     expect(getOrbitScatterMock).toHaveBeenCalledWith(
       expect.objectContaining({ discovery_method: 'Transit' }),
+      { signal: expect.any(AbortSignal) },
     )
     expect(getSkyMapMock).toHaveBeenCalledWith(
       expect.objectContaining({ discovery_method: 'Transit' }),
+      { signal: expect.any(AbortSignal) },
     )
     const kpis = screen.getByRole('region', { name: 'Key metrics' })
     expect(await within(kpis).findByText(String(FILTERED_TOTAL))).toBeInTheDocument()
@@ -373,9 +378,15 @@ describe('DashboardPage filter changes (test coverage AC 23-25)', () => {
 
     const distance = { distance_min: 10, distance_max: 200 }
     await waitFor(() => tableCallWith(distance))
-    expect(getDiscoveryTimelineMock).toHaveBeenCalledWith(expect.objectContaining(distance))
-    expect(getOrbitScatterMock).toHaveBeenCalledWith(expect.objectContaining(distance))
-    expect(getSkyMapMock).toHaveBeenCalledWith(expect.objectContaining(distance))
+    expect(getDiscoveryTimelineMock).toHaveBeenCalledWith(expect.objectContaining(distance), {
+      signal: expect.any(AbortSignal),
+    })
+    expect(getOrbitScatterMock).toHaveBeenCalledWith(expect.objectContaining(distance), {
+      signal: expect.any(AbortSignal),
+    })
+    expect(getSkyMapMock).toHaveBeenCalledWith(expect.objectContaining(distance), {
+      signal: expect.any(AbortSignal),
+    })
   })
 
   it('debounces the search by 300ms before refetching the list with a trimmed q (AC 25)', async () => {
@@ -421,6 +432,7 @@ describe('DashboardPage chart and table interactions (test coverage AC 26-30)', 
     expect(getPlanetsMock).toHaveBeenCalledWith({ ...years, limit: 1 })
     expect(getDiscoveryTimelineMock).toHaveBeenCalledWith(
       expect.objectContaining({ ...years, group_by_method: true }),
+      { signal: expect.any(AbortSignal) },
     )
   })
 
