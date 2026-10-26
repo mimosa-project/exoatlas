@@ -604,3 +604,81 @@ describe('PlanetTable disabled/error edge cases', () => {
     expect(screen.getByRole('columnheader', { name: 'Planet' })).toBeInTheDocument()
   })
 })
+
+describe('PlanetTable selected row highlight (drawer spec AC 23-24)', () => {
+  const items = [
+    buildItem({ id: 1, planet_name: 'A b' }),
+    buildItem({ id: 2, planet_name: 'B b' }),
+    buildItem({ id: 3, planet_name: null }),
+  ]
+
+  function rowOf(text: string) {
+    const cell = screen.getByText(text)
+    return cell.closest('tr') as HTMLTableRowElement
+  }
+
+  it('marks only the row whose planet_name matches selectedPlanetName with aria-current="true"', async () => {
+    getPlanetsMock.mockResolvedValue(buildResponse(items))
+
+    render(
+      <PlanetTable
+        queryParams={EMPTY_QUERY_PARAMS}
+        onSelectPlanet={vi.fn()}
+        selectedPlanetName="B b"
+      />,
+    )
+    await screen.findByText('A b')
+
+    expect(rowOf('B b')).toHaveAttribute('aria-current', 'true')
+    expect(rowOf('B b')).toHaveClass('planet-table__row--selected')
+    expect(rowOf('A b')).not.toHaveAttribute('aria-current')
+    expect(rowOf('A b')).not.toHaveClass('planet-table__row--selected')
+  })
+
+  it.each([
+    ['omitted', undefined],
+    ['null', null],
+  ])('marks no row when selectedPlanetName is %s, including rows with null planet_name', async (_label, selected) => {
+    getPlanetsMock.mockResolvedValue(buildResponse(items))
+
+    render(
+      <PlanetTable
+        queryParams={EMPTY_QUERY_PARAMS}
+        onSelectPlanet={vi.fn()}
+        selectedPlanetName={selected}
+      />,
+    )
+    await screen.findByText('A b')
+
+    const bodyRows = screen.getAllByRole('row').slice(1)
+    expect(bodyRows).toHaveLength(3)
+    for (const row of bodyRows) {
+      expect(row).not.toHaveAttribute('aria-current')
+    }
+  })
+
+  it('updates the highlight when selectedPlanetName changes', async () => {
+    getPlanetsMock.mockResolvedValue(buildResponse(items))
+
+    const { rerender } = render(
+      <PlanetTable
+        queryParams={EMPTY_QUERY_PARAMS}
+        onSelectPlanet={vi.fn()}
+        selectedPlanetName="A b"
+      />,
+    )
+    await screen.findByText('A b')
+    expect(rowOf('A b')).toHaveAttribute('aria-current', 'true')
+
+    rerender(
+      <PlanetTable
+        queryParams={EMPTY_QUERY_PARAMS}
+        onSelectPlanet={vi.fn()}
+        selectedPlanetName="B b"
+      />,
+    )
+
+    expect(rowOf('A b')).not.toHaveAttribute('aria-current')
+    expect(rowOf('B b')).toHaveAttribute('aria-current', 'true')
+  })
+})

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { getDiscoveryMethods } from '../api/discoveries'
 import { ApiError } from '../api/client'
 import { getHealth } from '../api/health'
@@ -9,6 +9,7 @@ import {
   Header,
   type ApiConnectionState,
 } from '../components/layout/Header'
+import { PlanetDetailDrawer } from '../components/planets/PlanetDetailDrawer'
 import { PlanetTable } from '../components/planets/PlanetTable'
 import { usePlanetFilters } from '../hooks/usePlanetFilters'
 import type { PlanetListQueryParams } from '../types/api'
@@ -102,7 +103,9 @@ export function DashboardPage() {
   const [displayedPlanets, setDisplayedPlanets] = useState<number | null>(null)
   const [displayedLoading, setDisplayedLoading] = useState(false)
   const [displayedError, setDisplayedError] = useState<string | null>(null)
-  const [, setSelectedPlanetName] = useState<string | null>(null)
+  const [selectedPlanetName, setSelectedPlanetName] = useState<string | null>(
+    null,
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -230,6 +233,8 @@ export function DashboardPage() {
     }
   }, [connection.status, isDebouncingSearch, listQueryParams])
 
+  const closePlanetDetail = useCallback(() => setSelectedPlanetName(null), [])
+
   const kpiValues = kpis.status === 'ready' ? kpis.data : null
   const filtersDisabled = connection.status !== 'connected'
 
@@ -247,6 +252,14 @@ export function DashboardPage() {
           isDebouncingSearch={isDebouncingSearch}
           disabled={filtersDisabled}
         />
+      }
+      drawer={
+        selectedPlanetName != null ? (
+          <PlanetDetailDrawer
+            planetName={selectedPlanetName}
+            onClose={closePlanetDetail}
+          />
+        ) : undefined
       }
     >
       <section className="dashboard__kpis" aria-label="Key metrics">
@@ -307,6 +320,7 @@ export function DashboardPage() {
             queryParams={listQueryParams}
             disabled={filtersDisabled}
             onSelectPlanet={setSelectedPlanetName}
+            selectedPlanetName={selectedPlanetName}
           />
         </div>
       </div>

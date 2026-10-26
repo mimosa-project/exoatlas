@@ -21,6 +21,7 @@ type PlanetTableProps = {
   queryParams: PlanetListQueryParams
   disabled?: boolean
   onSelectPlanet: (planetName: string) => void
+  selectedPlanetName?: string | null
 }
 
 type FetchStatus = 'waiting' | 'loading' | 'ready' | 'error'
@@ -87,6 +88,7 @@ export function PlanetTable({
   queryParams,
   disabled = false,
   onSelectPlanet,
+  selectedPlanetName = null,
 }: PlanetTableProps) {
   const [offset, setOffset] = useState(0)
   const [sort, setSort] = useState<PlanetSortField>('planet_name')
@@ -182,6 +184,14 @@ export function PlanetTable({
     }
   }
 
+  function isSelectedRow(item: PlanetListItem): boolean {
+    return (
+      selectedPlanetName != null &&
+      item.planet_name != null &&
+      item.planet_name === selectedPlanetName
+    )
+  }
+
   const total = data?.total ?? 0
   const canGoPrev = offset > 0
   const canGoNext = data != null && offset + PAGE_SIZE < total
@@ -254,7 +264,12 @@ export function PlanetTable({
               ? data.items.map((item, index) => (
                   <tr
                     key={item.id ?? `${item.planet_name ?? 'unknown'}-${index}`}
-                    className="planet-table__row"
+                    className={
+                      isSelectedRow(item)
+                        ? 'planet-table__row planet-table__row--selected'
+                        : 'planet-table__row'
+                    }
+                    aria-current={isSelectedRow(item) ? 'true' : undefined}
                     tabIndex={item.planet_name != null ? 0 : undefined}
                     onClick={() => handleRowSelect(item.planet_name)}
                     onKeyDown={(event) => handleRowKeyDown(event, item.planet_name)}

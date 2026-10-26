@@ -1,4 +1,4 @@
-const NOT_AVAILABLE_TEXT = 'Not available'
+export const NOT_AVAILABLE_TEXT = 'Not available'
 
 type FormatOptions = {
   missingText?: string
@@ -8,17 +8,19 @@ function formatWithUnit(
   value: number | null,
   unit: string,
   options?: FormatOptions,
+  fractionDigits = 2,
+  separator = ' ',
 ): string {
   if (value == null) {
     return options?.missingText ?? NOT_AVAILABLE_TEXT
   }
 
   const formatted = new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   }).format(value)
 
-  return `${formatted} ${unit}`
+  return `${formatted}${separator}${unit}`
 }
 
 export function formatOrbitalPeriod(
@@ -47,4 +49,46 @@ export function formatDistance(
   options?: FormatOptions,
 ): string {
   return formatWithUnit(value, 'pc', options)
+}
+
+export function formatTemperature(
+  value: number | null,
+  options?: FormatOptions,
+): string {
+  return formatWithUnit(value, 'K', options, 0)
+}
+
+export function formatSemiMajorAxis(
+  value: number | null,
+  options?: FormatOptions,
+): string {
+  return formatWithUnit(value, 'AU', options)
+}
+
+export function formatDensity(
+  value: number | null,
+  options?: FormatOptions,
+): string {
+  return formatWithUnit(value, 'g/cm³', options)
+}
+
+export function formatStellarRadius(
+  value: number | null,
+  options?: FormatOptions,
+): string {
+  return formatWithUnit(value, 'R_Sun', options)
+}
+
+export function formatStellarMass(
+  value: number | null,
+  options?: FormatOptions,
+): string {
+  return formatWithUnit(value, 'M_Sun', options)
+}
+
+export function formatDegrees(
+  value: number | null,
+  options?: FormatOptions,
+): string {
+  return formatWithUnit(value, '°', options, 4, '')
 }
