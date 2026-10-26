@@ -418,9 +418,12 @@ describe('DashboardPage filter changes (test coverage AC 23-25)', () => {
 })
 
 describe('DashboardPage chart and table interactions (test coverage AC 26-30)', () => {
-  it('narrows the year range to a clicked timeline bar (AC 26)', async () => {
+  // Superseded in part by review-remaining-fixes AC 4: the timeline itself is
+  // not narrowed and is not refetched.
+  it('narrows the year range to a clicked timeline bar, keeping the timeline itself (AC 26, remaining-fixes AC 4)', async () => {
     setUpConnectedApi()
     await renderConnected()
+    const timelineCalls = getDiscoveryTimelineMock.mock.calls.length
 
     clickChartPoint('Discovery timeline chart', { x: 2015, customdata: 2015 })
 
@@ -430,10 +433,20 @@ describe('DashboardPage chart and table interactions (test coverage AC 26-30)', 
     const years = { disc_year_min: 2015, disc_year_max: 2015 }
     await waitFor(() => tableCallWith(years))
     expect(getPlanetsMock).toHaveBeenCalledWith({ ...years, limit: 1 })
-    expect(getDiscoveryTimelineMock).toHaveBeenCalledWith(
-      expect.objectContaining({ ...years, group_by_method: true }),
-      { signal: expect.any(AbortSignal) },
+    await waitFor(() =>
+      expect(getOrbitScatterMock).toHaveBeenCalledWith(expect.objectContaining(years), {
+        signal: expect.any(AbortSignal),
+      }),
     )
+    expect(getSkyMapMock).toHaveBeenCalledWith(expect.objectContaining(years), {
+      signal: expect.any(AbortSignal),
+    })
+    expect(getDiscoveryTimelineMock).toHaveBeenCalledTimes(timelineCalls)
+    for (const [params] of getDiscoveryTimelineMock.mock.calls) {
+      expect(params).not.toHaveProperty('disc_year_min')
+      expect(params).not.toHaveProperty('disc_year_max')
+    }
+    expect(screen.getByTestId('chart:Discovery timeline chart')).toBeInTheDocument()
   })
 
   it('opens the drawer from a table row with the row highlighted, and closes it (AC 27)', async () => {
@@ -542,6 +555,40 @@ describe('DashboardPage chart refetch scope (chart-refetch AC 23-24)', () => {
     await user.selectOptions(screen.getByLabelText('Discovery method'), 'Transit')
     await waitFor(() =>
       expect(chartCallCounts()).toEqual(before.map((count) => count + 1)),
+    )
+  })
+})
+
+describe('DashboardPage timeline ignores the year filter (remaining-fixes AC 3-5)', () => {
+  it('does not refetch the timeline for sidebar year changes but does for method and distance', async () => {
+    setUpConnectedApi()
+    const user = userEvent.setup()
+    await renderConnected()
+    const timelineCalls = () => getDiscoveryTimelineMock.mock.calls.length
+    const before = timelineCalls()
+
+    fireEvent.change(rangeInputs('Discovery year').min, { target: { value: '2000' } })
+    await waitFor(() => tableCallWith({ disc_year_min: 2000 }))
+    await waitFor(() =>
+      expect(getSkyMapMock).toHaveBeenCalledWith(
+        expect.objectContaining({ disc_year_min: 2000 }),
+        { signal: expect.any(AbortSignal) },
+      ),
+    )
+    expect(timelineCalls()).toBe(before)
+
+    await user.selectOptions(screen.getByLabelText('Discovery method'), 'Transit')
+    await waitFor(() => expect(timelineCalls()).toBe(before + 1))
+    expect(getDiscoveryTimelineMock).toHaveBeenLastCalledWith(
+      { discovery_method: 'Transit', group_by_method: true },
+      { signal: expect.any(AbortSignal) },
+    )
+
+    fireEvent.change(rangeInputs('Distance (pc)').max, { target: { value: '300' } })
+    await waitFor(() => expect(timelineCalls()).toBe(before + 2))
+    expect(getDiscoveryTimelineMock).toHaveBeenLastCalledWith(
+      { discovery_method: 'Transit', distance_max: 300, group_by_method: true },
+      { signal: expect.any(AbortSignal) },
     )
   })
 })

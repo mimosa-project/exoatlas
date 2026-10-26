@@ -138,7 +138,7 @@ export function PlotlyChart({ data, layout, ariaLabel, onPointClick }: PlotlyCha
 
   return (
     <>
-      <div ref={containerRef} className="plotly-chart" role="img" aria-label={ariaLabel} />
+      <div ref={containerRef} className="plotly-chart" role="figure" aria-label={ariaLabel} />
       {renderFailed ? (
         <ErrorMessage className="plotly-chart__error">Chart could not be displayed.</ErrorMessage>
       ) : null}

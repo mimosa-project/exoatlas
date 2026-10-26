@@ -121,6 +121,19 @@ export function usePlanetFilters() {
     [discoveryMethod, discoveryYearMin, discoveryYearMax, distanceMin, distanceMax],
   )
 
+  // The timeline always shows every year, so it ignores the year filter (which
+  // is also what clicking one of its bars sets).
+  const timelineQueryParams = useMemo(
+    () =>
+      toChartFilterQueryParams({
+        ...DEFAULT_PLANET_FILTERS,
+        discoveryMethod,
+        distanceMin,
+        distanceMax,
+      }),
+    [discoveryMethod, distanceMin, distanceMax],
+  )
+
   const setFilter = useCallback(
     <K extends keyof PlanetFilters>(key: K, value: PlanetFilters[K]) => {
       setFilters((current) => ({
@@ -144,6 +157,7 @@ export function usePlanetFilters() {
     resetFilters,
     listQueryParams,
     chartQueryParams,
+    timelineQueryParams,
     isDebouncingSearch,
   }
 }

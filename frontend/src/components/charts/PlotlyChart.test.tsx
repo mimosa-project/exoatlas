@@ -95,10 +95,16 @@ beforeEach(() => {
 })
 
 describe('PlotlyChart rendering (AC 7-9)', () => {
-  it('renders a wrapper with role="img" and the given aria-label (AC 7)', () => {
+  it('renders a wrapper with role="figure" and the given aria-label (AC 7, remaining-fixes AC 7)', () => {
     render(<PlotlyChart data={DATA} layout={LAYOUT} ariaLabel="Test chart" />)
 
-    expect(screen.getByRole('img', { name: 'Test chart' })).toBeInTheDocument()
+    expect(screen.getByRole('figure', { name: 'Test chart' })).toBeInTheDocument()
+  })
+
+  it('does not use role="img" for the chart wrapper (remaining-fixes AC 7)', () => {
+    render(<PlotlyChart data={DATA} layout={LAYOUT} ariaLabel="Test chart" />)
+
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
 
   it('calls Plotly.react once after the dynamic import, with data, layout and config (AC 8)', async () => {
@@ -107,7 +113,7 @@ describe('PlotlyChart rendering (AC 7-9)', () => {
 
     expect(plotly.react).toHaveBeenCalledTimes(1)
     const [element, data, layout, config] = plotly.react.mock.calls[0]
-    const wrapper = screen.getByRole('img', { name: 'Test chart' })
+    const wrapper = screen.getByRole('figure', { name: 'Test chart' })
     expect(element === wrapper || wrapper.contains(element as Node)).toBe(true)
     expect(data).toBe(DATA)
     expect(layout).toBe(LAYOUT)
@@ -374,7 +380,7 @@ describe('PlotlyChart render failure message (state polish AC 12-13)', () => {
 
     const alert = screen.getByRole('alert')
     expect(alert).toHaveTextContent('Chart could not be displayed.')
-    const chart = screen.getByRole('img', { name: 'Test chart' })
+    const chart = screen.getByRole('figure', { name: 'Test chart' })
     expect(chart).not.toContainElement(alert)
     expect(chart.nextElementSibling).toBe(alert)
 
@@ -382,7 +388,7 @@ describe('PlotlyChart render failure message (state polish AC 12-13)', () => {
     await flush()
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'Test chart' })).toBeInTheDocument()
+    expect(screen.getByRole('figure', { name: 'Test chart' })).toBeInTheDocument()
   })
 
   // "No state update after unmount" (AC 13) is not observable in the DOM; it is

@@ -72,6 +72,7 @@ export function DashboardPage() {
     resetFilters,
     listQueryParams,
     chartQueryParams,
+    timelineQueryParams,
     isDebouncingSearch,
   } = usePlanetFilters()
 
@@ -303,7 +304,7 @@ export function DashboardPage() {
 
       <div className="dashboard__content">
         <DiscoveryTimeline
-          queryParams={chartQueryParams}
+          queryParams={timelineQueryParams}
           disabled={filtersDisabled}
           onSelectYear={selectDiscoveryYear}
         />

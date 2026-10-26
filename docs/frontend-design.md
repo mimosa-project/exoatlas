@@ -316,7 +316,7 @@ API 関数例:
 - Y 軸: `count`
 - 色: `discovery_method`
 
-棒をクリックした場合、該当年を `discoveryYearMin` / `discoveryYearMax` に反映する。
+棒をクリックした場合、該当年を `discoveryYearMin` / `discoveryYearMax` に反映する。タイムライン自体の取得には発見年フィルターを適用せず、常に全年を表示する（棒クリックやサイドバーで選んだ年は、一覧・KPI・他のチャートに反映される）。
 
 ### 8.4 `OrbitScatterPlot`
 

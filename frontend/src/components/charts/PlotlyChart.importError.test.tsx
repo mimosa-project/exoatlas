@@ -42,7 +42,7 @@ describe('PlotlyChart dynamic import failure (AC 12)', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
 
-    const chart = screen.getByRole('img', { name: 'Test chart' })
+    const chart = screen.getByRole('figure', { name: 'Test chart' })
     expect(chart).toBeInTheDocument()
     expect(unhandled).toEqual([])
 

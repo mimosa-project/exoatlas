@@ -4,15 +4,22 @@ type FormatOptions = {
   missingText?: string
 }
 
+type UnitFormatSettings = FormatOptions & {
+  fractionDigits?: number
+  separator?: string
+}
+
 function formatWithUnit(
   value: number | null,
   unit: string,
-  options?: FormatOptions,
-  fractionDigits = 2,
-  separator = ' ',
+  {
+    missingText = NOT_AVAILABLE_TEXT,
+    fractionDigits = 2,
+    separator = ' ',
+  }: UnitFormatSettings = {},
 ): string {
   if (value == null) {
-    return options?.missingText ?? NOT_AVAILABLE_TEXT
+    return missingText
   }
 
   const formatted = new Intl.NumberFormat('en-US', {
@@ -55,7 +62,7 @@ export function formatTemperature(
   value: number | null,
   options?: FormatOptions,
 ): string {
-  return formatWithUnit(value, 'K', options, 0)
+  return formatWithUnit(value, 'K', { ...options, fractionDigits: 0 })
 }
 
 export function formatSemiMajorAxis(
@@ -90,5 +97,5 @@ export function formatDegrees(
   value: number | null,
   options?: FormatOptions,
 ): string {
-  return formatWithUnit(value, '°', options, 4, '')
+  return formatWithUnit(value, '°', { ...options, fractionDigits: 4, separator: '' })
 }

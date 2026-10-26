@@ -499,3 +499,147 @@ describe('usePlanetFilters numeric timer and habitableCandidate (review2-fixes A
     expect(result.current.listQueryParams).toEqual({ mass_min: 4 })
   })
 })
+
+describe('usePlanetFilters timelineQueryParams (remaining-fixes AC 1-2)', () => {
+  it('excludes the discovery year but keeps method and distance', () => {
+    const { result } = renderHook(() => usePlanetFilters())
+
+    act(() => {
+      result.current.setFilter('discoveryMethod', 'Imaging')
+      result.current.setFilter('discoveryYearMin', 2000)
+      result.current.setFilter('discoveryYearMax', 2010)
+      result.current.setFilter('distanceMin', 0)
+      result.current.setFilter('distanceMax', 100)
+      result.current.setFilter('radiusMin', 1)
+      result.current.setFilter('q', 'k')
+    })
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+
+    expect(result.current.timelineQueryParams).toEqual({
+      discovery_method: 'Imaging',
+      distance_min: 0,
+      distance_max: 100,
+    })
+    expect(result.current.chartQueryParams).toEqual({
+      discovery_method: 'Imaging',
+      disc_year_min: 2000,
+      disc_year_max: 2010,
+      distance_min: 0,
+      distance_max: 100,
+    })
+  })
+
+  it('keeps its reference when only the year (or list-only filters) change', () => {
+    const { result } = renderHook(() => usePlanetFilters())
+    const before = result.current
+
+    act(() => {
+      result.current.setFilter('discoveryYearMin', 2015)
+      result.current.setFilter('discoveryYearMax', 2015)
+      result.current.setFilter('massMin', 1)
+      result.current.setFilter('habitableCandidate', true)
+    })
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+
+    expect(result.current.chartQueryParams).not.toBe(before.chartQueryParams)
+    expect(result.current.timelineQueryParams).toBe(before.timelineQueryParams)
+  })
+
+  it.each([
+    ['discoveryMethod', 'Transit'],
+    ['distanceMin', 1],
+    ['distanceMax', 2],
+  ] as const)('creates a new reference when %s changes', (key, value) => {
+    const { result } = renderHook(() => usePlanetFilters())
+    const before = result.current
+
+    act(() => {
+      result.current.setFilter(key, value)
+    })
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+
+    expect(result.current.timelineQueryParams).not.toBe(before.timelineQueryParams)
+  })
+
+  it('applies distance changes after the numeric debounce', () => {
+    const { result } = renderHook(() => usePlanetFilters())
+
+    act(() => {
+      result.current.setFilter('distanceMax', 50)
+    })
+    expect(result.current.timelineQueryParams).toEqual({})
+
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+    expect(result.current.timelineQueryParams).toEqual({ distance_max: 50 })
+  })
+})
+
+describe('usePlanetFilters timelineQueryParams on reset (remaining-fixes §5)', () => {
+  it('keeps its reference when resetting filters that only had a year range', () => {
+    const { result } = renderHook(() => usePlanetFilters())
+    act(() => {
+      result.current.setFilter('discoveryYearMin', 2001)
+      result.current.setFilter('discoveryYearMax', 2003)
+    })
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+    const before = result.current
+
+    act(() => {
+      result.current.resetFilters()
+    })
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+
+    expect(result.current.chartQueryParams).not.toBe(before.chartQueryParams)
+    expect(result.current.timelineQueryParams).toBe(before.timelineQueryParams)
+  })
+})
+
+describe('usePlanetFilters timelineQueryParams stability (remaining-fixes AC 5)', () => {
+  it('keeps its reference when filters are set to their current values', () => {
+    const { result } = renderHook(() => usePlanetFilters())
+    act(() => {
+      result.current.setFilter('discoveryMethod', 'Transit')
+      result.current.setFilter('distanceMax', 10)
+    })
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+    const before = result.current
+
+    act(() => {
+      result.current.setFilter('discoveryMethod', 'Transit')
+      result.current.setFilter('distanceMax', 10)
+    })
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+
+    expect(result.current.timelineQueryParams).toBe(before.timelineQueryParams)
+  })
+
+  it('keeps its reference when resetting filters that are already default', () => {
+    const { result } = renderHook(() => usePlanetFilters())
+    const before = result.current
+
+    act(() => {
+      result.current.resetFilters()
+    })
+    act(() => {
+      vi.advanceTimersByTime(300)
+    })
+
+    expect(result.current.timelineQueryParams).toBe(before.timelineQueryParams)
+  })
+})
